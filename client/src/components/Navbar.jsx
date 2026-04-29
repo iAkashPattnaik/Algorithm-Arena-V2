@@ -15,7 +15,7 @@ const Navbar = ({ onLogout }) => {
     { name: 'Profile', path: '/profile', icon: FiUser },
   ];
 
-  if (role === 'admin') {
+  if (role === 'admin' || role === 'super-admin') {
     navItems.push({ name: 'Admin', path: '/admin', icon: FiShield });
   }
 

@@ -83,6 +83,15 @@ export const AuthProvider = ({ children }) => {
     clearSession();
   }, [clearSession]);
 
+  const updateUser = useCallback((updates) => {
+    setUser(prev => {
+      if (!prev) return null;
+      const next = { ...prev, ...updates };
+      localStorage.setItem('user', JSON.stringify(next));
+      return next;
+    });
+  }, []);
+
   const value = useMemo(
     () => ({
       user,
@@ -92,8 +101,9 @@ export const AuthProvider = ({ children }) => {
       login,
       logout,
       refreshMe,
+      updateUser,
     }),
-    [user, loading, login, logout, refreshMe]
+    [user, loading, login, logout, refreshMe, updateUser]
   );
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
