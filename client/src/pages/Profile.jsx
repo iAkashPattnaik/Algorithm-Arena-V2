@@ -8,6 +8,7 @@ import EmptyState from '../components/EmptyState';
 import SkeletonCard from '../components/SkeletonCard';
 import PageHeader from '../components/PageHeader';
 import { api } from '../lib/api';
+import { USE_MOCK, mockProfileStats } from '../lib/mockData';
 import { useAuth } from '../context/useAuth';
 
 // Mock heatmap data generation (365 days)
@@ -139,6 +140,7 @@ const Profile = () => {
   const profileQuery = useQuery({
     queryKey: ['profile-stats'],
     queryFn: async () => {
+      if (USE_MOCK) return mockProfileStats;
       const res = await api.get('/api/profile/stats');
       return res.data.data;
     },
