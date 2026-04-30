@@ -635,10 +635,14 @@ const AdminPanel = () => {
                           {clan.members.map((member) => (
                             <div key={member._id} className="flex items-center gap-2 bg-glass-surface px-3 py-1.5 rounded-lg text-sm border border-glass-border/30">
                               <span className="font-medium">{member.username}</span>
-                              {clan.chief?._id === member._id && (
+                              {clan.chief?._id === member._id ? (
                                 <span className="text-[10px] bg-accent/20 text-accent px-1.5 rounded font-bold">CHIEF</span>
+                              ) : (
+                                <button className="text-[10px] bg-yellow-500/20 text-yellow-400 px-1.5 rounded font-bold hover:bg-yellow-500/40 transition-colors" onClick={() => onAssignChief(clan._id, member._id)} title="Promote to Chief">
+                                  MAKE CHIEF
+                                </button>
                               )}
-                              <button className="text-[10px] text-red-400 hover:text-red-500 transition-colors ml-1" onClick={() => onRemoveMember(clan._id, member._id)} title="Remove member">×</button>
+                              <button className="text-[10px] text-red-400 hover:text-red-500 transition-colors ml-1 font-bold" onClick={() => onRemoveMember(clan._id, member._id)} title="Remove member">×</button>
                             </div>
                           ))}
                         </div>
