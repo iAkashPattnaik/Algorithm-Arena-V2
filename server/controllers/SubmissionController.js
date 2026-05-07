@@ -140,6 +140,7 @@ const getSubmissions = async (req, res, next) => {
       to,
       sortBy = 'submittedAt',
       sortDir = 'desc',
+      range = 'all',
     } = req.query;
 
     const filter = {};
@@ -147,7 +148,14 @@ const getSubmissions = async (req, res, next) => {
     if (challengeId) filter.challengeId = challengeId;
     if (userId) filter.userId = userId;
 
-    if (from || to) {
+    if (range && range !== 'all') {
+      const now = new Date();
+      if (range === 'weekly') {
+        filter.submittedAt = { $gte: new Date(now.setDate(now.getDate() - 7)) };
+      } else if (range === 'monthly') {
+        filter.submittedAt = { $gte: new Date(now.setMonth(now.getMonth() - 1)) };
+      }
+    } else if (from || to) {
       filter.submittedAt = {};
       if (from) filter.submittedAt.$gte = new Date(from);
       if (to) filter.submittedAt.$lte = new Date(to);

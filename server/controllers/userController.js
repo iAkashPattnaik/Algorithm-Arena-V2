@@ -33,6 +33,9 @@ const updateUserRole = async (req, res, next) => {
     user.role = role;
     await user.save();
 
+    const { emitEvent } = require('../config/socket');
+    emitEvent('user_update', user);
+
     return sendSuccess(res, { data: user, message: 'User role updated successfully' });
   } catch (err) {
     return next(err);
