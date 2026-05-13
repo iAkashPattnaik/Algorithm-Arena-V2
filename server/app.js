@@ -37,6 +37,12 @@ const createApp = () => {
 
   // Keep Render keepalive traffic as cheap as possible by bypassing the
   // standard middleware chain and returning immediately.
+   app.get('/', (_req, res) => {
+  return res.status(200).json({
+    success: true,
+    message: 'Algorithm Arena API is running'
+  });
+});
   app.get('/ping', (_req, res) => {
     return res.status(200).json({ ok: true });
   });
