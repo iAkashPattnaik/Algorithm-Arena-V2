@@ -51,6 +51,8 @@ const NoticesAdmin = () => {
       <PageHeader 
         title="Network Broadcaster" 
         subtitle="Deploy global transmissions to all operatives." 
+        showBack={true}
+        backUrl="/chief-panel"
       />
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">

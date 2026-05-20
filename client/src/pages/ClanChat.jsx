@@ -93,6 +93,8 @@ const ClanChat = () => {
       <PageHeader 
         title="Squadron Uplink" 
         subtitle="Secure comms channel with your active clan members." 
+        showBack={true}
+        backUrl="/clans"
       />
 
       <BaseCard className="flex-1 flex flex-col p-0 overflow-hidden relative">

@@ -128,6 +128,7 @@ const Settings = () => {
       <PageHeader
         title="Rewrite Profile Card"
         subtitle="Craft your digital identity in the arena. Preview updates in real-time."
+        showBack={true}
         actions={
           <button
             className="btn-secondary text-sm flex items-center gap-2"

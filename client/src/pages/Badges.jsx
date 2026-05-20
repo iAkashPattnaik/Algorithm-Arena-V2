@@ -32,6 +32,7 @@ const Badges = () => {
       <PageHeader
         title="Asset Inventory"
         subtitle="Your collection of secured achievements and honors."
+        showBack={true}
       />
 
       {isLoading ? (

@@ -197,6 +197,8 @@ const Missions = () => {
       <PageHeader
         title="All Missions"
         subtitle="Browse all available challenges, filter by difficulty, and push your limits."
+        showBack={true}
+        backUrl="/dashboard"
       />
 
       {/* Filter Bar */}

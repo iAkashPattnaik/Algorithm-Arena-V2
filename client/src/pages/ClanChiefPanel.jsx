@@ -35,6 +35,8 @@ const ClanChiefPanel = () => {
         <PageHeader 
           title="Chief Command Center" 
           subtitle={chiefQuery.data ? `Managing Clan: ${chiefQuery.data.name}` : "Loading clan details..."}
+          showBack={true}
+          backUrl="/dashboard"
         />
         <div className="flex items-center gap-2 px-4 py-2 rounded-full bg-blue-500/10 border border-blue-500/20 text-blue-400 font-bold text-xs uppercase tracking-widest shadow-[0_0_15px_rgba(59,130,246,0.2)]">
           <FiShield className="text-blue-500" />

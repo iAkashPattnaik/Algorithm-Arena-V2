@@ -194,6 +194,8 @@ const Leaderboard = () => {
       <PageHeader
         title="Hall of Fame"
         subtitle="Celebrate the top rankers and elite clans of the arena."
+        showBack={true}
+        backUrl="/dashboard"
       />
 
       <div className="grid grid-cols-7 gap-4 macos-glass p-4 lg:flex lg:items-center lg:gap-4">

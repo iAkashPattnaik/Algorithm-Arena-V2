@@ -51,6 +51,8 @@ const ResourcesAdmin = () => {
       <PageHeader 
         title="Manage Intel Archives" 
         subtitle="Upload and manage curriculum documents." 
+        showBack={true}
+        backUrl="/chief-panel"
       />
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">

@@ -560,6 +560,8 @@ const Clans = () => {
       <PageHeader
         title="Clans"
         subtitle={myClan ? `You are a member of ${myClan.name}` : 'Find your tribe and compete together.'}
+        showBack={true}
+        backUrl="/dashboard"
       />
 
       <AnimatePresence mode="wait">

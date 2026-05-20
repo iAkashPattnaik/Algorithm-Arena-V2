@@ -32,6 +32,8 @@ const Resources = () => {
       <PageHeader 
         title="Intel Archives" 
         subtitle="Access curriculum documents, algorithms, and study materials." 
+        showBack={true}
+        backUrl="/dashboard"
       />
 
       <div className="flex gap-2 pb-4 overflow-x-auto">
