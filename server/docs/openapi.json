@@ -1,0 +1,100 @@
+{
+  "openapi": "3.0.3",
+  "info": {
+    "title": "Algorithm Arena API",
+    "version": "1.1.0",
+    "description": "API contract for Algorithm Arena platform."
+  },
+  "servers": [
+    {
+      "url": "http://localhost:5000"
+    }
+  ],
+  "paths": {
+    "/api/auth/register": {
+      "post": {
+        "summary": "Register a new user"
+      }
+    },
+    "/api/auth/login": {
+      "post": {
+        "summary": "Authenticate user and return token"
+      }
+    },
+    "/api/auth/me": {
+      "get": {
+        "summary": "Get current authenticated user"
+      }
+    },
+    "/api/auth/refresh": {
+      "post": {
+        "summary": "Rotate refresh token and issue new access token"
+      }
+    },
+    "/api/auth/logout": {
+      "post": {
+        "summary": "Logout current session"
+      }
+    },
+    "/api/auth/logout-all": {
+      "post": {
+        "summary": "Logout all sessions for current user"
+      }
+    },
+    "/api/challenges": {
+      "get": {
+        "summary": "List challenges with query filters"
+      },
+      "post": {
+        "summary": "Create challenge (admin)"
+      }
+    },
+    "/api/challenges/{id}": {
+      "get": {
+        "summary": "Get challenge by id"
+      },
+      "put": {
+        "summary": "Update challenge (admin)"
+      },
+      "delete": {
+        "summary": "Delete challenge (admin)"
+      }
+    },
+    "/api/submissions": {
+      "get": {
+        "summary": "List submissions (admin)"
+      },
+      "post": {
+        "summary": "Create submission"
+      }
+    },
+    "/api/submissions/my-submissions": {
+      "get": {
+        "summary": "List current user's submissions"
+      }
+    },
+    "/api/submissions/leaderboard": {
+      "get": {
+        "summary": "Leaderboard with timeframe and pagination"
+      }
+    },
+    "/api/submissions/{id}": {
+      "get": {
+        "summary": "Get submission by id (owner/admin)"
+      },
+      "put": {
+        "summary": "Update submission status (admin)"
+      }
+    },
+    "/api/dashboard/summary": {
+      "get": {
+        "summary": "Get dashboard summary for authenticated user"
+      }
+    },
+    "/api/profile/stats": {
+      "get": {
+        "summary": "Get profile statistics for authenticated user"
+      }
+    }
+  }
+}
