@@ -63,7 +63,10 @@ const env = Object.freeze({
   ...parsed.data,
   JWT_ACCESS_SECRET: parsed.data.JWT_ACCESS_SECRET || parsed.data.JWT_SECRET,
   JWT_REFRESH_SECRET: parsed.data.JWT_REFRESH_SECRET || parsed.data.JWT_SECRET,
-  COOKIE_SECURE: parsed.data.COOKIE_SECURE ?? parsed.data.NODE_ENV === 'production',
+  COOKIE_SECURE:
+    parsed.data.NODE_ENV === 'test'
+      ? false
+      : parsed.data.COOKIE_SECURE ?? parsed.data.NODE_ENV === 'production',
   CORS_ORIGINS: parsed.data.CORS_ORIGINS.split(',').map((origin) => origin.trim()).filter(Boolean),
 });
 
