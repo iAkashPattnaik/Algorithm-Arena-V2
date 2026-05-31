@@ -30,60 +30,90 @@ const connectDB = async () => {
 
 // Auto-repair clan collection indexes on startup (one-time fix for production)
 const repairClanIndexes = async () => {
-  if (process.env.NODE_ENV !== 'production') return; // Only in production
+  if (process.env.NODE_ENV !== 'production') {
+    logger.info('Skipping clan index repair (not production)');
+    return;
+  }
 
   try {
-    logger.info('Checking clan collection indexes...');
+    logger.info('🔍 Checking clan collection indexes...');
     const db = mongoose.connection.db;
     const clanCollection = db.collection('clans');
 
     const currentIndexes = await clanCollection.getIndexes();
+    logger.info(`Found ${Object.keys(currentIndexes).length} indexes:`, { indexes: Object.keys(currentIndexes) });
 
     // Check if old non-partial indexes exist
     let needsRepair = false;
+    const indexesToDrop = [];
+
     for (const [name, spec] of Object.entries(currentIndexes)) {
-      if ((spec.key?.name === 1 || spec.key?.tag === 1) && !spec.partialFilterExpression) {
+      if (name === '_id_') continue;
+
+      const isNameOrTagIndex = spec.key?.name === 1 || spec.key?.tag === 1;
+      const isPartial = !!spec.partialFilterExpression;
+
+      logger.info(`Index "${name}":`, {
+        key: spec.key,
+        isPartial,
+        partialFilter: spec.partialFilterExpression
+      });
+
+      if (isNameOrTagIndex && !isPartial) {
+        logger.warn(`⚠️  Found old non-partial index: ${name} - needs repair`);
         needsRepair = true;
-        logger.warn(`Found old non-partial index: ${name}. Repairing...`);
-        break;
+        indexesToDrop.push(name);
       }
     }
 
     if (!needsRepair) {
-      logger.info('Clan indexes are correct (partial indexes present)');
+      logger.info('✅ Clan indexes are correct (all are partial)');
       return;
     }
 
-    // Drop all non-_id indexes
-    logger.info('Dropping old indexes...');
-    for (const indexName of Object.keys(currentIndexes)) {
-      if (indexName === '_id_') continue;
+    logger.info(`🔧 Repairing ${indexesToDrop.length} indexes...`);
+
+    // Drop old indexes
+    for (const indexName of indexesToDrop) {
       try {
         await clanCollection.dropIndex(indexName);
-        logger.info(`Dropped index: ${indexName}`);
+        logger.info(`✅ Dropped index: ${indexName}`);
       } catch (err) {
-        logger.warn(`Could not drop ${indexName}: ${err.message}`);
+        logger.warn(`⚠️  Could not drop ${indexName}: ${err.message}`);
       }
     }
 
     // Create correct partial unique indexes
     logger.info('Creating new partial unique indexes...');
-    await clanCollection.createIndex(
-      { name: 1 },
-      { unique: true, partialFilterExpression: { status: 'active' } }
-    );
-    logger.info('Created partial unique index on name');
 
-    await clanCollection.createIndex(
-      { tag: 1 },
-      { unique: true, partialFilterExpression: { status: 'active' } }
-    );
-    logger.info('Created partial unique index on tag');
+    try {
+      await clanCollection.createIndex(
+        { name: 1 },
+        { unique: true, partialFilterExpression: { status: 'active' } }
+      );
+      logger.info('✅ Created partial unique index on name');
+    } catch (err) {
+      logger.error('Failed to create name index', { error: err.message });
+    }
 
-    logger.info('✅ Clan indexes repaired successfully!');
+    try {
+      await clanCollection.createIndex(
+        { tag: 1 },
+        { unique: true, partialFilterExpression: { status: 'active' } }
+      );
+      logger.info('✅ Created partial unique index on tag');
+    } catch (err) {
+      logger.error('Failed to create tag index', { error: err.message });
+    }
+
+    logger.info('✨ Clan indexes repaired successfully!');
   } catch (err) {
-    logger.error('Failed to repair clan indexes', { error: err.message });
-    // Don't exit - app should still work
+    logger.error('Failed to repair clan indexes', {
+      error: err.message || JSON.stringify(err),
+      stack: err.stack,
+      code: err.code,
+      name: err.name
+    });
   }
 };
 
