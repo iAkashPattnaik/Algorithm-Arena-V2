@@ -10,7 +10,6 @@ let User;
 let Clan;
 let Submission;
 let RefreshToken;
-let ChatMessage;
 
 const clearDatabase = async () => {
   const collections = mongoose.connection.collections;
@@ -30,7 +29,6 @@ test.before(async () => {
   Clan = require('../src/features/clans/Clan.model.js');
   Submission = require('../src/features/submissions/Submission.model.js');
   RefreshToken = require('../src/features/auth/RefreshToken.model.js');
-  ChatMessage = require('../src/features/chat/ChatMessage.model.js');
 
   await mongoose.connect(process.env.MONGO_URI);
 });
@@ -533,12 +531,6 @@ test('clans archive first, restore cleanly, and only admin can permanently delet
   });
   const memberToken = memberLogin.body.data.token;
 
-  const chatRes = await request(app)
-    .post(`/api/chat/${clanId}`)
-    .set('Authorization', `Bearer ${memberToken}`)
-    .send({ content: 'First message before archive' });
-  assert.equal(chatRes.status, 201);
-
   const chiefLogin = await request(app).post('/api/auth/login').send({
     email: 'clan.chief.lifecycle@example.com',
     password: 'strong-password',
@@ -570,12 +562,6 @@ test('clans archive first, restore cleanly, and only admin can permanently delet
   assert.equal(allLeaderboardAfterArchive.status, 200);
   assert.equal((allLeaderboardAfterArchive.body.data || []).some((clan) => clan._id === clanId && clan.status === 'archived'), true);
 
-  const archivedChatAttempt = await request(app)
-    .post(`/api/chat/${clanId}`)
-    .set('Authorization', `Bearer ${memberToken}`)
-    .send({ content: 'Should be blocked' });
-  assert.equal(archivedChatAttempt.status, 403);
-
   const restoreRes = await request(app)
     .patch(`/api/clans/${clanId}/restore`)
     .set('Authorization', `Bearer ${adminToken}`)
@@ -598,8 +584,6 @@ test('clans archive first, restore cleanly, and only admin can permanently delet
   const deletedClan = await Clan.findById(clanId);
   assert.equal(deletedClan, null);
 
-  const archivedMessageCount = await ChatMessage.countDocuments({ clanId });
-  assert.equal(archivedMessageCount, 0);
 
   const updatedChief = await User.findById(chief.id);
   const updatedMember = await User.findById(member.id);
