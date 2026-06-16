@@ -71,8 +71,9 @@ const ChiefMembersTab = ({ clan }) => {
   const members = clan.members || [];
 
   const filteredMembers = members.filter(member => {
-    const matchesSearch = member.username.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                          (member.regNo && member.regNo.toLowerCase().includes(searchTerm.toLowerCase()));
+    const matchesSearch = (member.username || '').toLowerCase().includes(searchTerm.toLowerCase()) ||
+                          (member.regNo && member.regNo.toLowerCase().includes(searchTerm.toLowerCase())) ||
+                          (member.email && member.email.toLowerCase().includes(searchTerm.toLowerCase()));
     const memberStatus = member.status || 'Active';
     if (statusFilter === 'All') return matchesSearch;
     return matchesSearch && memberStatus === statusFilter;

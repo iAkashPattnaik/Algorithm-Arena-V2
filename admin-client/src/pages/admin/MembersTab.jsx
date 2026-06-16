@@ -155,7 +155,9 @@ const MembersTab = () => {
   // Filter users
   const filteredUsers = (usersQuery.data || []).filter(u => {
     const s = search.toLowerCase();
-    const matchSearch = u.username.toLowerCase().includes(s) || (u.regNo && u.regNo.toLowerCase().includes(s));
+    const matchSearch = (u.username || '').toLowerCase().includes(s) || 
+                        (u.regNo && u.regNo.toLowerCase().includes(s)) ||
+                        (u.email && u.email.toLowerCase().includes(s));
     const matchLevel = levelFilter ? u.codingLevel === levelFilter : true;
     const matchClan = clanFilter ? u.clan?._id === clanFilter || u.clan === clanFilter : true;
     return matchSearch && matchLevel && matchClan;
