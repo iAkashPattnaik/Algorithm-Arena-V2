@@ -1,5 +1,5 @@
-const GLOBAL_OVERRIDE_ROLES = new Set(['admin', 'moderator']);
-const CHIEF_ROLES = new Set(['clan-chief', 'admin']);
+const GLOBAL_OVERRIDE_ROLES = new Set(['admin', 'moderator', 'superAdmin']);
+const CHIEF_ROLES = new Set(['clan-chief', 'admin', 'superAdmin']);
 
 const isGlobalOverride = (user) => GLOBAL_OVERRIDE_ROLES.has(user?.role);
 
@@ -13,11 +13,11 @@ const canAccessChiefPanel = (user) => isChief(user);
 
 const canCreateClan = (user) => isGlobalOverride(user);
 
-const canRestoreClan = (user) => user?.role === 'admin';
+const canRestoreClan = (user) => user?.role === 'admin' || user?.role === 'superAdmin';
 
-const canDeleteClan = (user, clan) => user?.role === 'admin' && isClanArchived(clan);
+const canDeleteClan = (user, clan) => (user?.role === 'admin' || user?.role === 'superAdmin') && isClanArchived(clan);
 
-const canUpdateClan = (user, clan) => user?.role === 'admin' && !isClanArchived(clan);
+const canUpdateClan = (user, clan) => (user?.role === 'admin' || user?.role === 'superAdmin') && !isClanArchived(clan);
 
 const canManageClanGlobally = (user) => isGlobalOverride(user);
 
@@ -32,7 +32,7 @@ const canManageOwnClan = (user, clan) => {
 
 const canArchiveClan = (user, clan) => {
   if (!user || !clan || isClanArchived(clan)) return false;
-  if (user?.role === 'admin') return true;
+  if (user?.role === 'admin' || user?.role === 'superAdmin') return true;
   return user?.role === 'clan-chief' && canManageOwnClan(user, clan);
 };
 
