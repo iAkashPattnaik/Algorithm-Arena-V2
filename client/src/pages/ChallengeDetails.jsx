@@ -335,7 +335,8 @@ const ChallengeDetails = () => {
         : [{ label: "Run", stdinValue: stdin, expected: null }];
 
     setRunning(true);
-    setRightTab("tests"); // Switch to tests tab to see results
+    setBottomTab("output");
+    setBottomCollapsed(false);
     setRunOutput(null);
 
     const langId = LANGUAGE_MAP[language]?.id ?? 63;
@@ -499,10 +500,7 @@ const ChallengeDetails = () => {
 
   return (
     <div
-      className="flex flex-col w-full"
-      style={{
-        height: "calc(100vh - 8rem)",
-      }}
+      className="flex flex-col w-full min-h-[calc(100vh-8rem)] lg:h-[calc(100vh-8rem)]"
     >
       {/* Header */}
       <div className="flex items-center gap-3 pb-3 border-b border-black/10 dark:border-white/10 mb-3 shrink-0 px-4 sm:px-6 lg:px-8 pt-4">
@@ -571,16 +569,6 @@ const ChallengeDetails = () => {
                 <span className="absolute bottom-0 left-2 right-2 h-0.5 bg-accent rounded-full" />
               )}
             </button>
-            <button
-              className={`px-4 py-3 text-sm font-semibold relative ${leftTab === "ask" ? "text-primary" : "text-secondary"}`}
-              onClick={() => setLeftTab("ask")}
-            >
-              <FiSend className="inline mr-2" />
-              Ask a Doubt
-              {leftTab === "ask" && (
-                <span className="absolute bottom-0 left-2 right-2 h-0.5 bg-accent rounded-full" />
-              )}
-            </button>
           </div>
           <div className="flex-1 overflow-y-auto p-5">
             {leftTab === "description" ? (
@@ -634,21 +622,6 @@ const ChallengeDetails = () => {
                   </Link>
                 ))}
               </div>
-            ) : leftTab === "ask" ? (
-              <div className="h-full flex flex-col">
-                <div className="flex-1 overflow-y-auto space-y-4 mb-4">
-                  <div className="bg-white/5 p-3 rounded-lg border border-white/10">
-                    <p className="text-xs text-secondary font-bold mb-1">Clan AI Assistant</p>
-                    <p className="text-sm text-primary">How can I help you with this challenge?</p>
-                  </div>
-                </div>
-                <div className="flex items-center gap-2 mt-auto">
-                  <input type="text" className="field-input flex-1" placeholder="Type your doubt here..." />
-                  <button className="bg-accent text-white p-2.5 rounded-lg hover:bg-accent/80 transition-colors">
-                    <FiSend />
-                  </button>
-                </div>
-              </div>
             ) : null}
           </div>
         </div>
@@ -668,14 +641,6 @@ const ChallengeDetails = () => {
               <button className={`px-4 py-3 text-sm font-semibold relative ${rightTab === "code" ? "text-primary" : "text-secondary"}`} onClick={() => setRightTab("code")}>
                 <FiCode className="inline mr-2" /> Code
                 {rightTab === "code" && <span className="absolute bottom-0 left-2 right-2 h-0.5 bg-accent rounded-full" />}
-              </button>
-              <button className={`px-4 py-3 text-sm font-semibold relative ${rightTab === "ai" ? "text-primary" : "text-secondary"}`} onClick={() => setRightTab("ai")}>
-                <FiZap className="inline mr-2" /> AI Review
-                {rightTab === "ai" && <span className="absolute bottom-0 left-2 right-2 h-0.5 bg-accent rounded-full" />}
-              </button>
-              <button className={`px-4 py-3 text-sm font-semibold relative ${rightTab === "tests" ? "text-primary" : "text-secondary"}`} onClick={() => setRightTab("tests")}>
-                <FiCheckCircle className="inline mr-2" /> Result
-                {rightTab === "tests" && <span className="absolute bottom-0 left-2 right-2 h-0.5 bg-accent rounded-full" />}
               </button>
             </div>
             {rightTab === "code" && (

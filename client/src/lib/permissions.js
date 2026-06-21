@@ -31,9 +31,12 @@ const canManageClanGlobally = (user) => isGlobalOverride(user);
 const canManageOwnClan = (user, clan) => {
   if (!user || !clan) return false;
   if (isGlobalOverride(user)) return true;
-  if (user?.role !== 'clan-chief') return false;
+  if (user?.role !== 'clan-chief' && !user?.isChief) return false;
 
   const clanId = getClanId(clan);
+  const clanChiefId = clan.chief?._id || clan.chief?.id || clan.chief || null;
+  if (clanChiefId && (user?.id === clanChiefId || user?._id === clanChiefId)) return true;
+
   const userClanId = getClanId(user?.clan) || toStr(user?.clanId);
   return Boolean(clanId && userClanId === clanId);
 };

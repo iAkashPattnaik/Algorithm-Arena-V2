@@ -9,8 +9,11 @@ const Submission = require('../src/features/submissions/Submission.model');
  * @returns {Promise<number|null>} 1-based rank, or null if no accepted submissions.
  */
 const getUserRank = async (userId) => {
+  // Optimized: compute rankings once, then return only the target user.
+  // Assumes MongoDB 5.0+ for $setWindowFields.
   const result = await Submission.aggregate([
-    { $match: { status: 'Accepted' } },
+    // Only accepted submissions participate in the leaderboard
+    { $match: { status: 'Accepted', userId } },
     {
       $lookup: {
         from: 'challenges',
@@ -20,6 +23,7 @@ const getUserRank = async (userId) => {
       },
     },
     { $unwind: '$challenge' },
+    // Group only the current user to compute their points/solvedCount
     {
       $group: {
         _id: '$userId',
@@ -27,14 +31,55 @@ const getUserRank = async (userId) => {
         solvedCount: { $sum: 1 },
       },
     },
-    { $sort: { totalPoints: -1, solvedCount: -1 } },
+    // Now compute the rank by comparing against everyone else with a single pass.
+    // We do this by running the full aggregation in a $facet.
     {
-      $setWindowFields: {
-        sortBy: { totalPoints: -1 },
-        output: { rank: { $denseRank: {} } },
+      $facet: {
+        self: [{ $limit: 1 }],
+        all: [
+          { $match: { status: 'Accepted' } },
+          {
+            $lookup: {
+              from: 'challenges',
+              localField: 'challengeId',
+              foreignField: '_id',
+              as: 'challenge',
+            },
+          },
+          { $unwind: '$challenge' },
+          {
+            $group: {
+              _id: '$userId',
+              totalPoints: { $sum: '$challenge.points' },
+              solvedCount: { $sum: 1 },
+            },
+          },
+          { $sort: { totalPoints: -1, solvedCount: -1 } },
+          {
+            $setWindowFields: {
+              sortBy: { totalPoints: -1 },
+              output: { rank: { $denseRank: {} } },
+            },
+          },
+          { $project: { _id: 1, rank: 1, totalPoints: 1, solvedCount: 1 } },
+        ],
       },
     },
-    { $match: { _id: userId } },
+    // Extract the self user stats
+    {
+      $project: {
+        self: { $arrayElemAt: ['$self', 0] },
+        all: 1,
+      },
+    },
+    // Match the precomputed rank row for the exact userId
+    { $unwind: '$all' },
+    {
+      $match: {
+        $expr: { $eq: ['$all._id', '$self._id'] },
+      },
+    },
+    { $project: { rank: '$all.rank' } },
   ]);
 
   return result.length ? result[0].rank : null;

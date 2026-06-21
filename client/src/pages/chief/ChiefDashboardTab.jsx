@@ -15,6 +15,18 @@ import {
   isClanArchived,
 } from '../../lib/permissions';
 
+const getRelativeTime = (dateString) => {
+  if (!dateString) return { text: 'a while ago', isOnline: false };
+  const diff = Date.now() - new Date(dateString).getTime();
+  const minutes = Math.floor(diff / 60000);
+  if (minutes < 5) return { text: 'Now', isOnline: true };
+  if (minutes < 60) return { text: `${minutes}m ago`, isOnline: false };
+  const hours = Math.floor(minutes / 60);
+  if (hours < 24) return { text: `${hours}h ago`, isOnline: false };
+  const days = Math.floor(hours / 24);
+  return { text: `${days}d ago`, isOnline: false };
+};
+
 const StatCard = ({ title, value, icon: Icon, colorClass, subtitle }) => (
   <BaseCard className="p-5 flex items-center gap-4 group hover:border-white/20 transition-all">
     <div className={`w-12 h-12 rounded-xl flex items-center justify-center ${colorClass}`}>
@@ -73,7 +85,7 @@ const ChiefDashboardTab = ({ clan, onTabChange }) => {
       queryClient.invalidateQueries({ queryKey: ['chief-clan-info'] });
     },
     onError: (err) => {
-      toast.error(err?.response?.data?.message || 'Failed to warn user');
+      toast.error(err?.response?.data?.message || 'Failed to issue warning');
     }
   });
 
@@ -226,7 +238,7 @@ const ChiefDashboardTab = ({ clan, onTabChange }) => {
           
           <div className="space-y-3 flex-1 overflow-y-auto pr-2 custom-scrollbar">
             {members.slice(0, 6).map((member) => {
-              const isActive = member.status !== 'Warned' && member.status !== 'Inactive';
+              const { text: timeText, isOnline } = getRelativeTime(member.lastLoginDate || member.createdAt);
               const isWarned = member.status === 'Warned';
               const solved = member.solvedProblems || 0;
               const total = TARGET_PROBLEMS;
@@ -240,11 +252,11 @@ const ChiefDashboardTab = ({ clan, onTabChange }) => {
                       <div className="w-8 h-8 rounded-full bg-glass-surface flex items-center justify-center font-black text-xs text-primary">
                         {(member.username?.[0] || member.email?.[0] || 'U').toUpperCase()}
                       </div>
-                      <div className={`absolute -bottom-1 -right-1 w-3 h-3 rounded-full border-2 border-[#0f1115] ${isActive ? 'bg-green-500 animate-pulse' : 'bg-gray-500'}`} />
+                      <div className={`absolute -bottom-1 -right-1 w-3 h-3 rounded-full border-2 border-[#0f1115] ${isOnline ? 'bg-green-500 animate-pulse' : 'bg-gray-500'}`} />
                     </div>
                     <div>
                       <p className="text-sm font-bold text-primary truncate max-w-[120px]">{member.username || member.email || 'Onboarding Pending'}</p>
-                      <p className="text-[10px] uppercase font-bold text-tertiary">Active {isActive ? 'Now' : '2d ago'}</p>
+                      <p className="text-[10px] uppercase font-bold text-tertiary">Active {timeText}</p>
                     </div>
                   </div>
 

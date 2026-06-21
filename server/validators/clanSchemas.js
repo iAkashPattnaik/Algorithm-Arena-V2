@@ -25,7 +25,7 @@ const clanNoticeIndexParamsSchema = {
 const clanCreateSchema = {
   body: z.object({
     name: z.string().trim().min(2).max(32),
-    tag: z.string().trim().min(2).max(5),
+    tag: z.string().trim().min(2).max(15),
     description: z.string().trim().max(256).optional().default(''),
   }),
 };
@@ -34,7 +34,7 @@ const clanUpdateSchema = {
   body: z
     .object({
       name: z.string().trim().min(2).max(32).optional(),
-      tag: z.string().trim().min(2).max(5).optional(),
+      tag: z.string().trim().min(2).max(15).optional(),
       description: z.string().trim().max(256).optional(),
     })
     .refine((body) => Object.keys(body).length > 0, 'At least one field is required'),

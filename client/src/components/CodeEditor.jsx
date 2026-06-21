@@ -233,7 +233,7 @@ const EDITOR_OPTIONS = {
   minimap: { enabled: false },
   scrollBeyondLastLine: false,
   automaticLayout: true,
-  wordWrap: "off",
+  wordWrap: "on",
   tabSize: 2,
   renderLineHighlight: "line",
   cursorBlinking: "smooth",

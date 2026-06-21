@@ -23,6 +23,7 @@ const toAuthPayload = (user, accessToken, { isChief = false, dailyXpAwarded = fa
     email: user.email,
     role: user.role,
     status: user.status,
+    warningMessage: user.warningMessage || null,
     points: user.points,
     profilePicture: user.profilePicture,
     usernameSet: user.usernameSet,
@@ -187,17 +188,19 @@ const googleAuth = async (req, res, next) => {
 
     // Daily Login XP: award 50 XP if first login of the day
     let dailyXpAwarded = false;
-    const today = new Date();
-    today.setHours(0, 0, 0, 0);
+    const now = new Date();
+    const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
     const lastLogin = user.lastLoginDate ? new Date(user.lastLoginDate) : null;
     const isFirstLoginToday = !lastLogin || lastLogin < today;
 
     if (isFirstLoginToday && !isNewUser) {
       user.points = (user.points || 0) + 50;
-      user.lastLoginDate = new Date();
-      await user.save({ validateBeforeSave: false });
       dailyXpAwarded = true;
     }
+
+    user.lastLoginDate = now;
+    user.lastConfirmedAt = now;
+    await user.save({ validateBeforeSave: false });
 
     const Clan = require('../clans/Clan.model');
     const clanWhereChief = await Clan.findOne({ chief: user._id });
@@ -378,17 +381,18 @@ const googleLogin = async (req, res, next) => {
 
     // Daily Login XP: award 50 XP if first login of the day
     let dailyXpAwarded = false;
-    const today = new Date();
-    today.setHours(0, 0, 0, 0);
+    const now = new Date();
+    const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
     const lastLogin = user.lastLoginDate ? new Date(user.lastLoginDate) : null;
     const isFirstLoginToday = !lastLogin || lastLogin < today;
 
     if (isFirstLoginToday) {
       user.points = (user.points || 0) + 50;
-      user.lastLoginDate = new Date();
-      await user.save({ validateBeforeSave: false });
       dailyXpAwarded = true;
     }
+
+    user.lastLoginDate = now;
+    await user.save({ validateBeforeSave: false });
 
     const Clan = require('../clans/Clan.model');
     const clanWhereChief = await Clan.findOne({ chief: user._id });
@@ -522,6 +526,23 @@ const getMe = async (req, res, next) => {
       throw new Error('User not found');
     }
 
+    // Daily Login XP check
+    let dailyXpAwarded = false;
+    const now = new Date();
+    const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+    const lastLogin = user.lastLoginDate ? new Date(user.lastLoginDate) : null;
+
+    if (!lastLogin || lastLogin < today) {
+      user.points = (user.points || 0) + 50;
+      user.lastLoginDate = now;
+      await User.findByIdAndUpdate(user._id, {
+        points: user.points,
+        lastLoginDate: user.lastLoginDate,
+        lastConfirmedAt: now
+      });
+      dailyXpAwarded = true;
+    }
+
     // Check if user is a chief of any clan
     const Clan = require('../clans/Clan.model');
     const clanWhereChief = await Clan.findOne({ chief: req.user.id });
@@ -529,7 +550,8 @@ const getMe = async (req, res, next) => {
     return sendSuccess(res, {
       data: {
         ...user,
-        isChief: !!clanWhereChief
+        isChief: !!clanWhereChief,
+        dailyXpAwarded
       },
     });
   } catch (err) {

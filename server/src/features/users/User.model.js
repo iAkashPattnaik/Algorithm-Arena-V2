@@ -87,6 +87,10 @@ const userSchema = new mongoose.Schema({
     enum: ['Active', 'Inactive', 'Warned', 'Banned'],
     default: 'Active',
   },
+  warningMessage: {
+    type: String,
+    default: null,
+  },
   solvedProblems: {
     type: Number,
     default: 0,

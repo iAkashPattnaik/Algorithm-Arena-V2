@@ -14,7 +14,7 @@ const clanSchema = new mongoose.Schema({
     trim: true,
     uppercase: true,
     minlength: [2, 'Tag must be at least 2 characters'],
-    maxlength: [5, 'Tag cannot exceed 5 characters'],
+    maxlength: [15, 'Tag cannot exceed 15 characters'],
   },
   description: {
     type: String,

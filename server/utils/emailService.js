@@ -11,7 +11,7 @@ const createTransporter = () => {
   });
 };
 
-const sendEmail = async (to, subject, html) => {
+const sendEmail = async (to, subject, html, options = {}) => {
   try {
     if (process.env.NODE_ENV === 'test') {
       console.log(`[TEST MOCK] Email mock-sent to ${to} (Subject: ${subject})`);
@@ -23,7 +23,8 @@ const sendEmail = async (to, subject, html) => {
       from: process.env.SMTP_FROM || '"Algorithm Arena" <noreply@algorithm-arena.com>',
       to,
       subject,
-      html
+      html,
+      ...options
     };
 
     const info = await transporter.sendMail(mailOptions);

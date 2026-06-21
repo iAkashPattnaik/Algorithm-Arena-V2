@@ -34,21 +34,17 @@ const auditLogSchema = new mongoose.Schema({
 });
 
 // Immutability: Block update and delete operations on Audit Logs
-auditLogSchema.pre('save', function (next) {
+auditLogSchema.pre('save', function () {
   if (!this.isNew) {
-    return next(new Error('Audit logs are immutable and cannot be updated.'));
+    throw new Error('Audit logs are immutable and cannot be updated.');
   }
-  next();
 });
 
-auditLogSchema.pre('remove', function (next) {
-  return next(new Error('Audit logs are immutable and cannot be deleted.'));
-});
-
-const blockUpdatesAndDeletes = function (next) {
-  return next(new Error('Audit logs are immutable and cannot be modified or deleted.'));
+const blockUpdatesAndDeletes = function () {
+  throw new Error('Audit logs are immutable and cannot be modified or deleted.');
 };
 
+auditLogSchema.pre('remove', blockUpdatesAndDeletes);
 auditLogSchema.pre('updateOne', blockUpdatesAndDeletes);
 auditLogSchema.pre('updateMany', blockUpdatesAndDeletes);
 auditLogSchema.pre('findOneAndUpdate', blockUpdatesAndDeletes);

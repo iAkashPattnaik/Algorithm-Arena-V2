@@ -1,7 +1,7 @@
 const express = require('express');
 const router = express.Router();
 const { protect, admin, chiefOrAdmin } = require('../../../middleware/auth');
-const { getUsers, updateUserRole, updateUserLevel, warnUser, banUser, addAdminByEmail } = require('./user.controller');
+const { getUsers, updateUserRole, updateUserLevel, warnUser, banUser, unbanUser, addAdminByEmail } = require('./user.controller');
 
 router.use(protect);
 
@@ -9,6 +9,7 @@ router.get('/', admin, getUsers);
 router.put('/:id/role', admin, updateUserRole);
 router.patch('/:id/role', admin, updateUserRole);
 router.put('/:id/ban', admin, banUser);
+router.put('/:id/unban', admin, unbanUser);
 router.post('/add-admin', admin, addAdminByEmail);
 
 router.put('/:id/level', chiefOrAdmin, updateUserLevel);

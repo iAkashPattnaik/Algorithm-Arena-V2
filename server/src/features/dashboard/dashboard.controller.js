@@ -15,13 +15,13 @@ const getDashboardSummary = async (req, res, next) => {
       Submission.distinct('challengeId', { userId: req.user.id, status: 'Accepted' }),
     ]);
 
-    const [rank, recentActivity] = await Promise.all([
-      getUserRank(new mongoose.Types.ObjectId(req.user.id)),
-      Submission.find({ userId: req.user.id })
-        .populate('challengeId', 'title difficulty points')
-        .sort({ submittedAt: -1 })
-        .limit(5),
-    ]);
+    // Rank is the most expensive call; keep parallel DB work minimal.
+    const recentActivity = await Submission.find({ userId: req.user.id })
+      .populate('challengeId', 'title difficulty points')
+      .sort({ submittedAt: -1 })
+      .limit(5);
+
+    const rank = await getUserRank(new mongoose.Types.ObjectId(req.user.id));
 
     return sendSuccess(res, {
       data: {
@@ -105,7 +105,7 @@ const getProfileStats = async (req, res, next) => {
       },
     ]);
 
-    // Get total counts for each difficulty to calculate percentage
+    // Total counts for each difficulty (used for percentages)
     const difficultyTotals = await Challenge.aggregate([
       {
         $group: {
@@ -120,17 +120,12 @@ const getProfileStats = async (req, res, next) => {
       totalsMap[d._id] = d.count;
     });
 
-    const overallScore = stats?.acceptedCount 
+    // Rank is the expensive aggregation; compute after lightweight stats/heatmap pieces.
+    const rank = await getUserRank(userId);
+
+    const overallScore = stats?.acceptedCount
       ? ((stats.acceptedCount / (Object.values(totalsMap).reduce((a, b) => a + b, 0) || 1)) * 100).toFixed(1)
       : 0;
-
-    // ... (rest of the logic remains same: rank, heatmap, streaks, recentSubmissions)
-    
-    // [I'll skip repeating the intermediate lines to keep the replacement clean if possible, 
-    // but I need to make sure I don't break the existing code. I'll provide the full block for clarity.]
-    
-    // Calculate Rank using shared utility (DB-level, no full array in RAM)
-    const rank = await getUserRank(userId);
 
     // Calculate Heatmap Data
     const heatmapAggregation = await Submission.aggregate([

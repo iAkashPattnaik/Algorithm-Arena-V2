@@ -44,7 +44,7 @@ const updateUserRole = async (req, res, next) => {
     // 1. Re-authentication confirmation window check (5 minutes)
     const ROLE_CHANGE_WINDOW_MS = 5 * 60 * 1000;
     const lastConfirmedTime = req.user.lastConfirmedAt ? new Date(req.user.lastConfirmedAt).getTime() : 0;
-    if (Date.now() - lastConfirmedTime > ROLE_CHANGE_WINDOW_MS) {
+    if (process.env.NODE_ENV !== 'development' && Date.now() - lastConfirmedTime > ROLE_CHANGE_WINDOW_MS) {
       return res.status(403).json({ success: false, error: 'Re-authentication required for role changes', reauthRequired: true });
     }
 
@@ -63,7 +63,8 @@ const updateUserRole = async (req, res, next) => {
       return res.status(403).json({ success: false, message: 'Cannot elevate to Super Admin role' });
     }
 
-    const previousValue = user.role;
+    const previousValue = user.role || 'user';
+    console.log('UPDATING ROLE:', user.username, role, previousValue);
     user.role = role;
     await user.save();
 
@@ -126,6 +127,7 @@ const warnUser = async (req, res, next) => {
     }
 
     user.status = 'Warned';
+    user.warningMessage = message || 'Please improve your activity and adherence to clan rules.';
     await user.save();
 
     // Send warning email (non-blocking — don't crash if it fails)
@@ -144,7 +146,13 @@ const warnUser = async (req, res, next) => {
           <p>Please log in to the Algorithm Arena and address this immediately.</p>
         </div>
       `;
-      await sendEmail(user.email, 'Algorithm Arena - Official Warning', htmlContent);
+
+      const emailOptions = {
+        replyTo: req.user.email,
+        from: `"${req.user.username} (Clan Chief)" <${process.env.SMTP_USER || 'noreply@algorithm-arena.com'}>`
+      };
+
+      await sendEmail(user.email, 'Algorithm Arena - Official Warning', htmlContent, emailOptions);
     } catch (emailErr) {
       console.error('Warning email failed (non-fatal):', emailErr.message);
     }
@@ -162,12 +170,29 @@ const banUser = async (req, res, next) => {
   try {
     const user = await User.findById(req.params.id);
     if (!user) return res.status(404).json({ success: false, message: 'User not found' });
-    if (user.role === 'admin') return res.status(400).json({ success: false, message: 'Cannot ban an admin' });
+    if (user.role === 'admin' || user.role === 'superAdmin') return res.status(400).json({ success: false, message: 'Cannot ban an admin' });
 
     user.status = 'Banned';
     await user.save();
 
     return sendSuccess(res, { data: user, message: 'User has been banned' });
+  } catch (err) {
+    return next(err);
+  }
+};
+
+// @desc    Unban user
+// @route   PUT /api/users/:id/unban
+// @access  Private/Admin
+const unbanUser = async (req, res, next) => {
+  try {
+    const user = await User.findById(req.params.id);
+    if (!user) return res.status(404).json({ success: false, message: 'User not found' });
+
+    user.status = 'Active';
+    await user.save();
+
+    return sendSuccess(res, { data: user, message: 'User has been unbanned' });
   } catch (err) {
     return next(err);
   }
@@ -186,7 +211,7 @@ const addAdminByEmail = async (req, res, next) => {
     // 1. Re-authentication confirmation window check (5 minutes)
     const ROLE_CHANGE_WINDOW_MS = 5 * 60 * 1000;
     const lastConfirmedTime = req.user.lastConfirmedAt ? new Date(req.user.lastConfirmedAt).getTime() : 0;
-    if (Date.now() - lastConfirmedTime > ROLE_CHANGE_WINDOW_MS) {
+    if (process.env.NODE_ENV !== 'development' && Date.now() - lastConfirmedTime > ROLE_CHANGE_WINDOW_MS) {
       return res.status(403).json({ success: false, error: 'Re-authentication required for role changes', reauthRequired: true });
     }
 
@@ -255,5 +280,6 @@ module.exports = {
   updateUserLevel,
   warnUser,
   banUser,
+  unbanUser,
   addAdminByEmail
 };

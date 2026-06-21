@@ -278,11 +278,11 @@ const ClaimUsername = () => {
                     onChange={(e) => setBranch(e.target.value)}
                     className="w-full bg-white/80 dark:bg-white/[0.06] border border-glass-border rounded-xl py-3 pl-11 pr-4 text-primary outline-none focus:border-accent focus:ring-1 focus:ring-accent transition-all appearance-none"
                   >
-                    <option value="">Select Branch</option>
-                    <option value="B.Tech CSE">B.Tech CSE</option>
-                    <option value="B.Tech ECE">B.Tech ECE</option>
-                    <option value="B.Tech EEE">B.Tech EEE</option>
-                    <option value="MCA">MCA</option>
+                    <option className="bg-white dark:bg-[#0f111a] text-black dark:text-white" value="">Select Branch</option>
+                    <option className="bg-white dark:bg-[#0f111a] text-black dark:text-white" value="B.Tech CSE">B.Tech CSE</option>
+                    <option className="bg-white dark:bg-[#0f111a] text-black dark:text-white" value="B.Tech ECE">B.Tech ECE</option>
+                    <option className="bg-white dark:bg-[#0f111a] text-black dark:text-white" value="B.Tech EEE">B.Tech EEE</option>
+                    <option className="bg-white dark:bg-[#0f111a] text-black dark:text-white" value="MCA">MCA</option>
                   </select>
                 </div>
               </div>
@@ -297,11 +297,11 @@ const ClaimUsername = () => {
                     onChange={(e) => setYear(e.target.value)}
                     className="w-full bg-white/80 dark:bg-white/[0.06] border border-glass-border rounded-xl py-3 pl-11 pr-4 text-primary outline-none focus:border-accent focus:ring-1 focus:ring-accent transition-all appearance-none"
                   >
-                    <option value="">Select Year</option>
-                    <option value="First Year">First Year</option>
-                    <option value="Second Year">Second Year</option>
-                    <option value="Third Year">Third Year</option>
-                    <option value="Fourth Year">Fourth Year</option>
+                    <option className="bg-white dark:bg-[#0f111a] text-black dark:text-white" value="">Select Year</option>
+                    <option className="bg-white dark:bg-[#0f111a] text-black dark:text-white" value="First Year">First Year</option>
+                    <option className="bg-white dark:bg-[#0f111a] text-black dark:text-white" value="Second Year">Second Year</option>
+                    <option className="bg-white dark:bg-[#0f111a] text-black dark:text-white" value="Third Year">Third Year</option>
+                    <option className="bg-white dark:bg-[#0f111a] text-black dark:text-white" value="Fourth Year">Fourth Year</option>
                   </select>
                 </div>
               </div>
