@@ -252,8 +252,13 @@ const MemberHoverCard = ({ userId, username, children, className = "" }) => {
 
   const handleTooltipEnter = useCallback(() => clearTimeout(hoverTimeoutRef.current), []);
 
-  const navigate = useNavigate();
-  const handleClick = useCallback((e) => { e.preventDefault(); e.stopPropagation(); navigate(`/profile/${username}`); }, [navigate, username]);
+  const handleClick = useCallback((e) => { 
+    e.preventDefault(); 
+    e.stopPropagation(); 
+    // In admin-client, we need to redirect to the main app (port 3000) for profile pages
+    const mainAppUrl = window.location.hostname === 'localhost' ? 'http://localhost:3000' : window.location.origin.replace('admin.', '');
+    window.open(`${mainAppUrl}/profile/${username}`, '_blank');
+  }, [username]);
 
   useEffect(() => {
     if (!showTooltip) return;

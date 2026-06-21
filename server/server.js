@@ -14,33 +14,30 @@ const server = http.createServer(app);
 
 const connectDB = async () => {
   let uri = env.MONGO_URI;
-  if (process.env.NODE_ENV !== 'production') {
-    const { MongoMemoryServer } = require('mongodb-memory-server');
-    const mongod = await MongoMemoryServer.create();
-    uri = mongod.getUri();
-    logger.info('Started MongoDB Memory Server at ' + uri);
-  } else {
+
+  if (process.env.NODE_ENV === 'production') {
     const dns = require('dns');
     dns.setServers(['8.8.8.8', '8.8.4.4']);
   }
+  
   const conn = await mongoose.connect(uri);
   logger.info('MongoDB connected', { host: conn.connection.host });
   return conn;
 };
 
-// Auto-repair clan collection indexes on startup (aggressive approach)
+// NOTE: Production startup DB index repairs removed for scalability.
+// Keep the implementation only for one-time migration execution.
+// One-time index repair (run via script): server/scripts/repair-indexes.js
+// Leaving the implementation here for re-use, but it is NOT called on startup.
 const repairClanIndexes = async () => {
-  if (process.env.NODE_ENV !== 'production') {
-    logger.info('Skipping clan index repair (not production)');
-    return;
-  }
-
   try {
     logger.info('🔍 Checking clan collection indexes...');
     const db = mongoose.connection.db;
     const clanCollection = db.collection('clans');
 
+
     const indexCursor = clanCollection.listIndexes();
+
     const indexArray = await indexCursor.toArray();
     logger.info(`Found ${indexArray.length} indexes`, { indexes: indexArray.map(i => i.name) });
 
@@ -137,12 +134,8 @@ const repairClanIndexes = async () => {
 // Replaces legacy non-partial unique indexes on username/regNo (which index
 // explicit nulls and cause E11000 dup key errors) with partial ones.
 const repairUserIndexes = async () => {
-  if (process.env.NODE_ENV !== 'production') {
-    logger.info('Skipping user index repair (not production)');
-    return;
-  }
-
   try {
+
     const db = mongoose.connection.db;
     const userCollection = db.collection('users');
     const indexArray = await userCollection.listIndexes().toArray();
@@ -195,11 +188,10 @@ const startServer = async () => {
     // Seed default users if database is empty
     await initializeDefaultUsers();
 
-    // Auto-repair clan indexes (one-time production fix)
-    await repairClanIndexes();
+    // Production index repair is disabled to avoid startup DB locks/index rebuild spikes.
+    // Run one-time migrations/scripts instead (see TODO).
+    logger.info('Skipping production index repair routines (clans/users)');
 
-    // Auto-repair user indexes (username/regNo dup-key fix)
-    await repairUserIndexes();
 
 
     // Initialize Socket.io
@@ -224,3 +216,5 @@ module.exports = {
   connectDB,
   startServer,
 };
+
+// Trigger restart for Mongoose 9 AuditLog fixes

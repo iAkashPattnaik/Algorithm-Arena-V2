@@ -1,4 +1,4 @@
-import React, { useMemo, useState } from "react";
+import React, { useMemo, useState, useEffect } from "react";
 import { Link } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
 import { motion } from "framer-motion";
@@ -64,6 +64,14 @@ const fd = (d = 0) => ({
    ══════════════════════════════════════════════ */
 const Dashboard = () => {
   const { user } = useAuth();
+
+  const [showWarning, setShowWarning] = useState(true);
+  useEffect(() => {
+    if (user?.status === "Warned") {
+      const t = setTimeout(() => setShowWarning(false), 20000);
+      return () => clearTimeout(t);
+    }
+  }, [user?.status]);
 
   const greeting = useMemo(() => getSessionGreeting(), []);
 
@@ -154,15 +162,15 @@ const Dashboard = () => {
   return (
     <div className="space-y-8 pb-12">
       {/* ── Warning ─────────────────────────── */}
-      {user?.status === "Warned" && (
+      {user?.status === "Warned" && showWarning && (
         <motion.div
           {...fd(0)}
           className="flex items-center gap-3 p-4 rounded-xl border border-red-500/40 bg-red-500/8"
         >
           <FiAlertTriangle className="text-red-400 text-lg flex-shrink-0" />
           <p className="text-sm text-red-400">
-            You have an active warning from your Clan Chief. Please review your
-            activity.
+            <strong className="font-black mr-2">Official Warning:</strong>
+            {user?.warningMessage || "You have an active warning from your Clan Chief. Please review your activity."}
           </p>
         </motion.div>
       )}

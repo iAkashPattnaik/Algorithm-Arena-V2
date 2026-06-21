@@ -30,7 +30,7 @@ export const AuthProvider = ({ children }) => {
     try {
       const res = await api.get('/api/auth/me');
       const me = res.data?.data;
-      if (me?.role !== 'admin') {
+      if (me?.role !== 'admin' && me?.role !== 'superAdmin') {
         clearSession();
         return null;
       }
@@ -44,6 +44,7 @@ export const AuthProvider = ({ children }) => {
         profilePicture: me?.profilePicture,
         isChief: me?.isChief,
         clanId: me?.clanId,
+        lastConfirmedAt: me?.lastConfirmedAt,
       };
       localStorage.setItem('user', JSON.stringify(normalizedUser));
       setUser(normalizedUser);
@@ -79,6 +80,7 @@ export const AuthProvider = ({ children }) => {
       profilePicture: userObj?.profilePicture,
       isChief: userObj?.isChief,
       clanId: userObj?.clanId,
+      lastConfirmedAt: userObj?.lastConfirmedAt,
     };
 
     if (token) {
@@ -122,6 +124,11 @@ export const AuthProvider = ({ children }) => {
   }, []);
 
   const confirmSessionIfNeeded = useCallback(async () => {
+    if (import.meta.env.DEV) {
+      console.log('Bypassing re-authentication in development mode');
+      return;
+    }
+
     const ROLE_CHANGE_WINDOW_MS = 5 * 60 * 1000;
     const lastConfirmedTime = user?.lastConfirmedAt ? new Date(user.lastConfirmedAt).getTime() : 0;
     

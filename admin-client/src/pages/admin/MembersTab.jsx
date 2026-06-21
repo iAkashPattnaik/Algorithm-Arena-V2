@@ -21,6 +21,7 @@ const MembersTab = () => {
   const [menuPos, setMenuPos] = useState({ top: 0, right: 0 });
   const canManageUsers = canManageClanGlobally(user);
   const [adminEmail, setAdminEmail] = useState('');
+  const [chiefSelectModal, setChiefSelectModal] = useState(null);
 
   const addAdminMutation = useMutation({
     mutationFn: async (email) => {
@@ -80,6 +81,21 @@ const MembersTab = () => {
     }
   });
 
+  const assignChiefMutation = useMutation({
+    mutationFn: async ({ clanId, userId }) => {
+      return api.put(`/api/clans/${clanId}/chief`, { userId });
+    },
+    onSuccess: () => {
+      toast.success("Clan Chief assigned successfully");
+      queryClient.invalidateQueries({ queryKey: ['admin-all-users'] });
+      queryClient.invalidateQueries({ queryKey: ['admin-clans-list'] });
+      setChiefSelectModal(null);
+    },
+    onError: (err) => {
+      toast.error(err.response?.data?.message || "Failed to assign chief");
+    }
+  });
+
   const banUserMutation = useMutation({
     mutationFn: async (userId) => {
       return api.put(`/api/users/${userId}/ban`);
@@ -94,6 +110,20 @@ const MembersTab = () => {
     }
   });
 
+  const unbanUserMutation = useMutation({
+    mutationFn: async (userId) => {
+      return api.put(`/api/users/${userId}/unban`);
+    },
+    onSuccess: () => {
+      toast.success("User unbanned");
+      queryClient.invalidateQueries({ queryKey: ['admin-all-users'] });
+      setMenuOpen(null);
+    },
+    onError: () => {
+      toast.error("Failed to unban user");
+    }
+  });
+
   const handleRoleChange = async (targetUser, role) => {
     if (!canManageUsers) return;
 
@@ -103,9 +133,7 @@ const MembersTab = () => {
       ? `elevate ${targetUser.username} to Clan Chief`
       : `demote ${targetUser.username} to Member`;
 
-    if (!window.confirm(`Are you sure you want to ${actionText}?`)) {
-      return;
-    }
+    // Bypass window.confirm to avoid browser blocking issues
 
     try {
       await confirmSessionIfNeeded();
@@ -119,6 +147,8 @@ const MembersTab = () => {
 
   // Filter users
   const filteredUsers = (usersQuery.data || []).filter(u => {
+    if (u.role === 'admin' || u.role === 'superAdmin') return false;
+    
     const s = search.toLowerCase();
     const matchSearch = (u.username || '').toLowerCase().includes(s) || 
                         (u.regNo && u.regNo.toLowerCase().includes(s)) ||
@@ -147,19 +177,29 @@ const MembersTab = () => {
 
   return (
     <div className="space-y-6">
-      {/* Header & Filters */}
       <div className="flex flex-col lg:flex-row justify-between gap-4">
         <h2 className="text-section-title font-bold flex items-center gap-2"><FiUsers className="text-green-400" /> Member Directory</h2>
         
-        <div className="flex flex-wrap gap-3">
-          <div className="relative">
-            <FiSearch className="absolute left-3 top-1/2 -translate-y-1/2 text-tertiary" />
-            <input className="field-input pl-9 w-full md:w-64" placeholder="Search name or Reg No..." value={search} onChange={e => setSearch(e.target.value)} />
-          </div>
-          
+        <div className="flex flex-col md:flex-row gap-4 mb-6">
+        <div className="relative flex-1">
+          <FiSearch className="absolute left-3 top-1/2 -translate-y-1/2 text-tertiary" />
+          <input
+            type="text"
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+            placeholder="Search name or Reg No..."
+            className="w-full bg-black/20 border border-white/10 rounded-lg pl-10 pr-4 py-2 text-sm text-white focus:outline-none focus:border-blue-500/50 transition-colors"
+          />
+        </div>
+
+        <div className="flex gap-2">
           <div className="relative">
             <FiFilter className="absolute left-3 top-1/2 -translate-y-1/2 text-tertiary" />
-            <select className="field-select pl-9 appearance-none" value={levelFilter} onChange={e => setLevelFilter(e.target.value)}>
+            <select
+              value={levelFilter}
+              onChange={(e) => setLevelFilter(e.target.value)}
+              className="bg-black/20 border border-white/10 rounded-lg pl-9 pr-8 py-2 text-sm text-white appearance-none focus:outline-none focus:border-blue-500/50"
+            >
               <option value="">All Levels</option>
               <option value="Beginner">Beginner</option>
               <option value="Intermediate">Intermediate</option>
@@ -168,14 +208,72 @@ const MembersTab = () => {
           </div>
 
           <div className="relative">
-            <FiFilter className="absolute left-3 top-1/2 -translate-y-1/2 text-tertiary" />
-            <select className="field-select pl-9 appearance-none" value={clanFilter} onChange={e => setClanFilter(e.target.value)}>
+            <FiUsers className="absolute left-3 top-1/2 -translate-y-1/2 text-tertiary" />
+            <select
+              value={clanFilter}
+              onChange={(e) => setClanFilter(e.target.value)}
+              className="bg-black/20 border border-white/10 rounded-lg pl-9 pr-8 py-2 text-sm text-white appearance-none focus:outline-none focus:border-blue-500/50"
+            >
               <option value="">All Clans</option>
-              {clansQuery.data?.map(c => <option key={c._id} value={c._id}>{c.name}</option>)}
+              <option value="unassigned">Unassigned</option>
+              {clansQuery.data?.filter(c => c.status === 'active').map(c => (
+                <option key={c._id} value={c._id}>{c.name}</option>
+              ))}
             </select>
           </div>
         </div>
       </div>
+      </div>
+
+      {chiefSelectModal && (
+        <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4">
+          <div className="bg-dark/90 border border-white/10 rounded-xl max-w-md w-full p-6 shadow-2xl relative">
+            <h3 className="text-xl text-white font-medium mb-4 flex items-center gap-2">
+              <FiShield className="text-blue-400" />
+              Assign Clan Chief
+            </h3>
+            <p className="text-sm text-secondary mb-6">
+              Select a clan to assign <span className="text-white font-medium">{chiefSelectModal.username}</span> as the chief.
+              If the clan already has a chief, they will be demoted to a regular member.
+            </p>
+            
+            <div className="max-h-[300px] overflow-y-auto mb-6 bg-black/30 rounded border border-white/5 divide-y divide-white/5 custom-scrollbar">
+              {clansQuery.data?.filter(c => c.status === 'active').length === 0 ? (
+                <div className="p-4 text-center text-secondary text-sm">No active clans available.</div>
+              ) : (
+                clansQuery.data?.filter(c => c.status === 'active').map(clan => (
+                  <button
+                    key={clan._id}
+                    onClick={() => {
+                      assignChiefMutation.mutate({ clanId: clan._id, userId: chiefSelectModal._id });
+                    }}
+                    disabled={assignChiefMutation.isPending}
+                    className="w-full text-left p-3 hover:bg-white/5 flex items-center justify-between group transition-colors"
+                  >
+                    <div>
+                      <div className="text-white font-medium group-hover:text-blue-400 transition-colors">{clan.name}</div>
+                      <div className="text-xs text-tertiary">
+                        {clan.chief ? `Current Chief: ${clan.chief.username || 'Assigned'}` : 'No Chief Assigned'}
+                      </div>
+                    </div>
+                    <FiUserCheck className="text-secondary opacity-0 group-hover:opacity-100 transition-opacity" />
+                  </button>
+                ))
+              )}
+            </div>
+
+            <div className="flex justify-end gap-3 mt-4">
+              <button 
+                onClick={() => setChiefSelectModal(null)}
+                className="px-4 py-2 text-sm text-secondary hover:text-white transition-colors"
+                disabled={assignChiefMutation.isPending}
+              >
+                Cancel
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
       {canManageUsers && (
         <BaseCard className="p-6">
@@ -306,41 +404,57 @@ const MembersTab = () => {
                   <div className="px-3 py-2 text-xs text-tertiary italic flex items-center gap-2">
                     <FiShield className="text-yellow-400" /> Protected Super Admin
                   </div>
+                ) : menuUser.status === 'Banned' ? (
+                  <button
+                    onClick={() => {
+                      if (!canManageUsers) return;
+                      unbanUserMutation.mutate(menuUser._id);
+                    }}
+                    disabled={!canManageUsers}
+                    className="w-full text-left px-3 py-2 text-sm text-green-400 hover:text-green-300 hover:bg-green-500/10 rounded flex items-center gap-2 disabled:opacity-50"
+                  >
+                    <FiUserCheck /> Unban User
+                  </button>
                 ) : (
                   <>
+                    {menuUser.role === 'user' && (
+                      <button
+                        onClick={() => {
+                          setMenuOpen(null);
+                          setChiefSelectModal(menuUser);
+                        }}
+                        disabled={!canManageUsers}
+                        className="w-full text-left px-3 py-2 text-sm text-secondary hover:text-white hover:bg-white/5 rounded flex items-center gap-2 disabled:opacity-50"
+                      >
+                        <FiShield className="text-blue-400" /> Make Clan Chief
+                      </button>
+                    )}
+                    {menuUser.role === 'clan-chief' && (
+                      <button
+                        onClick={() => handleRoleChange(menuUser, 'user')}
+                        disabled={!canManageUsers}
+                        className="w-full text-left px-3 py-2 text-sm text-secondary hover:text-white hover:bg-white/5 rounded flex items-center gap-2 disabled:opacity-50"
+                      >
+                        <FiUserCheck className="text-green-400" /> Make Member
+                      </button>
+                    )}
+                    <div className="h-px bg-white/10 my-1 mx-2" />
                     <button
-                      onClick={() => handleRoleChange(menuUser, 'clan-chief')}
-                      disabled={!canManageUsers}
-                      className="w-full text-left px-3 py-2 text-sm text-secondary hover:text-white hover:bg-white/5 rounded flex items-center gap-2 disabled:opacity-50"
+                      onClick={() => {
+                        if (!canManageUsers) return;
+                        if (menuUser.role === 'superAdmin') {
+                          toast.error("Cannot ban a superAdmin");
+                          return;
+                        }
+                        banUserMutation.mutate(menuUser._id);
+                      }}
+                      disabled={!canManageUsers || menuUser.role === 'superAdmin'}
+                      className="w-full text-left px-3 py-2 text-sm text-red-400 hover:text-red-300 hover:bg-red-500/10 rounded flex items-center gap-2 disabled:opacity-50"
                     >
-                      <FiShield className="text-blue-400" /> Make Clan Chief
-                    </button>
-                    <button
-                      onClick={() => handleRoleChange(menuUser, 'user')}
-                      disabled={!canManageUsers || menuUser.role === 'user'}
-                      className="w-full text-left px-3 py-2 text-sm text-secondary hover:text-white hover:bg-white/5 rounded flex items-center gap-2 disabled:opacity-50"
-                    >
-                      <FiUserCheck className="text-green-400" /> Make Member
+                      <FiUserX /> Ban User
                     </button>
                   </>
                 )}
-                <div className="h-px bg-white/10 my-1 mx-2" />
-                <button
-                  onClick={() => {
-                    if (!canManageUsers) return;
-                    if (menuUser.role === 'superAdmin') {
-                      toast.error("Cannot ban a superAdmin");
-                      return;
-                    }
-                    if (window.confirm(`Ban user ${menuUser.username}?`)) {
-                      banUserMutation.mutate(menuUser._id);
-                    }
-                  }}
-                  disabled={!canManageUsers || menuUser.role === 'superAdmin'}
-                  className="w-full text-left px-3 py-2 text-sm text-red-400 hover:text-red-300 hover:bg-red-500/10 rounded flex items-center gap-2 disabled:opacity-50"
-                >
-                  <FiUserX /> Ban User
-                </button>
               </div>
             </div>
           </>

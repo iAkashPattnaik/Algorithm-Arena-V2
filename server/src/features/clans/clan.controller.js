@@ -109,7 +109,7 @@ const getMyClan = async (req, res, next) => {
       $or: [{ chief: userId }, { members: userId }]
     })
       .populate('chief', 'username email')
-      .populate('members', 'username email status codingLevel points solvedProblems regNo')
+      .populate('members', 'username email status codingLevel points solvedProblems regNo clan')
       .populate('requests', 'username email regNo')
       .populate('createdBy', 'username email')
       .populate('archivedBy', 'username email')
@@ -695,11 +695,17 @@ const assignChief = async (req, res, next) => {
       clanName = clan.name;
       clanId = clan._id.toString();
 
-      if (!clan.members.map((m) => m.toString()).includes(userId)) {
-        return res.status(400).json({ success: false, message: 'User must be a clan member to become chief' });
+      const newChief = await withSession(User.findById(userId), session);
+      if (!newChief) {
+        return res.status(404).json({ success: false, message: 'User not found' });
       }
 
-      const newChief = await withSession(User.findById(userId), session);
+      if (!clan.members.map((m) => m.toString()).includes(userId)) {
+        // Auto-add member if not already in clan
+        await removeUserFromOtherClans(userId, { keepClanId: clan._id, session });
+        clan.members.addToSet(userId);
+        clan.requests.pull(userId);
+      }
       if (!newChief) {
         return res.status(404).json({ success: false, message: 'User not found' });
       }

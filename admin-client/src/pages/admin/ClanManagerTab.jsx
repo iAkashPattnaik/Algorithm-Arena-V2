@@ -536,7 +536,7 @@ const ClanManagerTab = () => {
                   </div>
                   <div>
                      <label className="field-label">Clan Tag (Unique)</label>
-                     <input className="field-input w-full uppercase font-mono" placeholder="e.g. CYBER" maxLength={5} value={createModal.tag} onChange={e => setCreateModal(m => ({...m, tag: e.target.value.toUpperCase()}))} />
+                     <input className="field-input w-full uppercase font-mono" placeholder="e.g. CYBER" maxLength={15} value={createModal.tag} onChange={e => setCreateModal(m => ({...m, tag: e.target.value.toUpperCase()}))} />
                   </div>
                   <div>
                      <label className="field-label">Description</label>

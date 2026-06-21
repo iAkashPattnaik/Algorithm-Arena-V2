@@ -161,11 +161,11 @@ const Settings = () => {
               <div className="space-y-2">
                 <label className="field-label flex items-center gap-2"><FiCpu className="text-accent" size={14} /> Branch / Course</label>
                 <select name="branch" className="field-select" value={formData.branch} onChange={handleChange}>
-                  <option value="">Select Branch</option>
-                  <option value="B.Tech CSE">B.Tech CSE</option>
-                  <option value="B.Tech ECE">B.Tech ECE</option>
-                  <option value="B.Tech EEE">B.Tech EEE</option>
-                  <option value="MCA">MCA</option>
+                  <option className="bg-white dark:bg-[#0f111a] text-black dark:text-white" value="">Select Branch</option>
+                  <option className="bg-white dark:bg-[#0f111a] text-black dark:text-white" value="B.Tech CSE">B.Tech CSE</option>
+                  <option className="bg-white dark:bg-[#0f111a] text-black dark:text-white" value="B.Tech ECE">B.Tech ECE</option>
+                  <option className="bg-white dark:bg-[#0f111a] text-black dark:text-white" value="B.Tech EEE">B.Tech EEE</option>
+                  <option className="bg-white dark:bg-[#0f111a] text-black dark:text-white" value="MCA">MCA</option>
                 </select>
               </div>
 
@@ -187,11 +187,11 @@ const Settings = () => {
               <div className="space-y-2">
                 <label className="field-label flex items-center gap-2"><FiLayers className="text-accent" size={14} /> Year of Study</label>
                 <select name="year" className="field-select" value={formData.year} onChange={handleChange}>
-                  <option value="">Select Year</option>
-                  <option value="First Year">First Year</option>
-                  <option value="Second Year">Second Year</option>
-                  <option value="Third Year">Third Year</option>
-                  <option value="Fourth Year">Fourth Year</option>
+                  <option className="bg-white dark:bg-[#0f111a] text-black dark:text-white" value="">Select Year</option>
+                  <option className="bg-white dark:bg-[#0f111a] text-black dark:text-white" value="First Year">First Year</option>
+                  <option className="bg-white dark:bg-[#0f111a] text-black dark:text-white" value="Second Year">Second Year</option>
+                  <option className="bg-white dark:bg-[#0f111a] text-black dark:text-white" value="Third Year">Third Year</option>
+                  <option className="bg-white dark:bg-[#0f111a] text-black dark:text-white" value="Fourth Year">Fourth Year</option>
                 </select>
               </div>
 
@@ -203,11 +203,11 @@ const Settings = () => {
               <div className="space-y-2">
                 <label className="field-label flex items-center gap-2"><FiCpu className="text-accent" size={14} /> Preferred Code Language</label>
                 <select name="preferredLanguage" className="field-select" value={formData.preferredLanguage} onChange={handleChange}>
-                  <option value="javascript">JavaScript</option>
-                  <option value="python">Python</option>
-                  <option value="java">Java</option>
-                  <option value="cpp">C++</option>
-                  <option value="c">C</option>
+                  <option className="bg-white dark:bg-[#0f111a] text-black dark:text-white" value="javascript">JavaScript</option>
+                  <option className="bg-white dark:bg-[#0f111a] text-black dark:text-white" value="python">Python</option>
+                  <option className="bg-white dark:bg-[#0f111a] text-black dark:text-white" value="java">Java</option>
+                  <option className="bg-white dark:bg-[#0f111a] text-black dark:text-white" value="cpp">C++</option>
+                  <option className="bg-white dark:bg-[#0f111a] text-black dark:text-white" value="c">C</option>
                 </select>
                 <p className="text-[10px] text-tertiary">Default language pre-selected in the code editor</p>
               </div>

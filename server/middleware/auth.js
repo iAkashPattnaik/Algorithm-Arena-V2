@@ -27,6 +27,13 @@ exports.protect = async (req, res, next) => {
     }
 
     req.user = user;
+
+    // Track active presence: Update lastLoginDate if older than 5 minutes
+    if (!user.lastLoginDate || Date.now() - user.lastLoginDate.getTime() > 5 * 60 * 1000) {
+      user.lastLoginDate = new Date();
+      User.updateOne({ _id: user._id }, { lastLoginDate: user.lastLoginDate }).catch(() => {});
+    }
+
     return next();
   } catch (error) {
     return res.status(401).json({ success: false, message: 'Not authorized, token failed' });
