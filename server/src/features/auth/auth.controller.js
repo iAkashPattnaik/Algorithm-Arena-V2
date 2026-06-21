@@ -109,7 +109,10 @@ const googleAuth = async (req, res, next) => {
         user.firebaseUid = uid;
         user.authProvider = 'google';
         if (picture) {
-          user.profilePicture = picture;
+          const isCurrentPicGoogle = !user.profilePicture || user.profilePicture.includes('googleusercontent.com');
+          if (isCurrentPicGoogle) {
+            user.profilePicture = picture;
+          }
         }
         // Existing users already have a username
         if (user.username) {
@@ -137,8 +140,11 @@ const googleAuth = async (req, res, next) => {
     } else {
       let shouldSave = false;
       if (picture && user.profilePicture !== picture) {
-        user.profilePicture = picture;
-        shouldSave = true;
+        const isCurrentPicGoogle = !user.profilePicture || user.profilePicture.includes('googleusercontent.com');
+        if (isCurrentPicGoogle) {
+          user.profilePicture = picture;
+          shouldSave = true;
+        }
       }
       // Check if they are pre-authorized
       if (isPreauthorizedAdmin && user.role !== 'admin' && user.role !== 'superAdmin') {
