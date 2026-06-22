@@ -275,6 +275,8 @@ const ChallengeDetails = () => {
     },
   });
 
+  const isSolved = useMemo(() => (historyQuery.data || []).some(sub => sub.status === "Accepted"), [historyQuery.data]);
+
   // Review mode: fetch the submission being reviewed
   const reviewQuery = useQuery({
     queryKey: ["review-submission", reviewSubmissionId],
@@ -802,14 +804,16 @@ const ChallengeDetails = () => {
                   <button
                     onClick={handleSubmit}
                     disabled={submitting}
-                    className="flex items-center gap-1.5 px-4 py-1.5 rounded-lg bg-green-600 text-white text-xs font-bold hover:bg-green-500 transition-all disabled:opacity-60"
+                    className={`flex items-center gap-1.5 px-4 py-1.5 rounded-lg text-white text-xs font-bold transition-all disabled:opacity-60 ${
+                      isSolved ? "bg-amber-600 hover:bg-amber-500" : "bg-green-600 hover:bg-green-500"
+                    }`}
                   >
                     {submitting ? (
                       <FiRefreshCw size={11} className="animate-spin" />
                     ) : (
                       <FiSend size={11} />
                     )}
-                    {submitting ? "Submitting…" : "Submit"}
+                    {submitting ? "Submitting…" : isSolved ? "Re-submit (No XP)" : "Submit"}
                   </button>
                 )}
               </div>
