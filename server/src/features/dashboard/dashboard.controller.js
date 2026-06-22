@@ -416,7 +416,6 @@ const getAdminDashboardSummary = async (req, res, next) => {
     const totalSubmissions = await Submission.countDocuments();
     
     const pendingAssignments = await User.countDocuments({ clan: null, role: 'user' });
-    const clansWithoutChief = await Clan.countDocuments({ $or: [{ chief: null }, { chief: { $exists: false } }] });
     
     const avgCompletion = 68; // Mocked average for now to keep it lightweight
     
@@ -444,7 +443,6 @@ const getAdminDashboardSummary = async (req, res, next) => {
         totalSubmissions,
         avgCompletion,
         pendingAssignments,
-        clansWithoutChief,
         clanPerformance
       }
     });

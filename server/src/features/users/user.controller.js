@@ -68,11 +68,6 @@ const updateUserRole = async (req, res, next) => {
     user.role = role;
     await user.save();
 
-    if (previousValue === 'clan-chief' && role !== 'clan-chief') {
-      const Clan = require('../clans/Clan.model');
-      await Clan.updateMany({ chief: user._id }, { $set: { chief: null } });
-    }
-
     // 4. Create immutable Audit Log entry
     const AuditLog = require('../audit/AuditLog.model');
     await AuditLog.create({
@@ -178,11 +173,6 @@ const banUser = async (req, res, next) => {
     if (user.role === 'admin' || user.role === 'superAdmin') return res.status(400).json({ success: false, message: 'Cannot ban an admin' });
 
     user.status = 'Banned';
-    if (user.role === 'clan-chief') {
-      user.role = 'user';
-      const Clan = require('../clans/Clan.model');
-      await Clan.updateMany({ chief: user._id }, { $set: { chief: null } });
-    }
     await user.save();
 
     return sendSuccess(res, { data: user, message: 'User has been banned' });
@@ -200,11 +190,6 @@ const unbanUser = async (req, res, next) => {
     if (!user) return res.status(404).json({ success: false, message: 'User not found' });
 
     user.status = 'Active';
-    if (user.role === 'clan-chief') {
-      user.role = 'user';
-      const Clan = require('../clans/Clan.model');
-      await Clan.updateMany({ chief: user._id }, { $set: { chief: null } });
-    }
     await user.save();
 
     return sendSuccess(res, { data: user, message: 'User has been unbanned' });
