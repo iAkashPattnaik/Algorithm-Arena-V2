@@ -90,14 +90,13 @@ const buildQS = ({
   search,
   difficulty,
   category,
-  sortBy,
-  sortDir,
 }) => {
   const p = new URLSearchParams();
   p.set("page", page);
   p.set("limit", limit);
-  p.set("sortBy", sortBy);
-  p.set("sortDir", sortDir);
+  // Always fetch by createdAt desc; sorting is handled client-side
+  p.set("sortBy", "createdAt");
+  p.set("sortDir", "desc");
   if (search) p.set("search", search);
   if (difficulty) p.set("difficulty", difficulty);
   if (category) p.set("category", category);
@@ -222,6 +221,7 @@ const Dashboard = () => {
     return map;
   }, [mySubmissionsQ.data]);
 
+  const DIFF_ORDER = { Easy: 1, Medium: 2, Hard: 3 };
   const availableChallenges = useMemo(() => {
     // 1. Group and filter out duplicate questions by title (case-insensitive)
     const seen = new Set();
@@ -247,9 +247,38 @@ const Dashboard = () => {
       return !isSolved && !isPending;
     });
 
-    // 3. Return at most 4 challenges
-    return filtered.slice(0, 4);
-  }, [challenges, subsMap]);
+    // 3. Sort by selected criteria
+    const sorted = [...filtered].sort((a, b) => {
+      if (filters.sortBy === 'deadline') {
+        const now = Date.now();
+        const dlA = a.questionSetId?.deadline ? new Date(a.questionSetId.deadline).getTime() : Infinity;
+        const dlB = b.questionSetId?.deadline ? new Date(b.questionSetId.deadline).getTime() : Infinity;
+        
+        const isPastA = dlA < now;
+        const isPastB = dlB < now;
+
+        if (isPastA !== isPastB) return isPastA ? 1 : -1; // Upcoming before past
+        if (dlA !== dlB) return dlA - dlB; // Ascending order
+      } else if (filters.sortBy === 'difficulty') {
+        const dA = DIFF_ORDER[a.difficulty] || 4;
+        const dB = DIFF_ORDER[b.difficulty] || 4;
+        if (dA !== dB) return dA - dB;
+      } else if (filters.sortBy === 'points') {
+        if ((a.points || 0) !== (b.points || 0)) return (a.points || 0) - (b.points || 0);
+      } else if (filters.sortBy === 'title') {
+        const cmp = (a.title || '').localeCompare(b.title || '');
+        if (cmp !== 0) return cmp;
+      } else if (filters.sortBy === 'createdAt') {
+        const tA = new Date(a.createdAt || 0).getTime();
+        const tB = new Date(b.createdAt || 0).getTime();
+        if (tA !== tB) return tB - tA;
+      }
+      return new Date(b.createdAt || 0) - new Date(a.createdAt || 0);
+    });
+
+    // 4. Return at most 4 challenges
+    return sorted.slice(0, 4);
+  }, [challenges, subsMap, filters.sortBy]);
 
   const drafts = useMemo(() => {
     const rawDrafts = getLocalDrafts();
@@ -646,8 +675,11 @@ const Dashboard = () => {
                 value={filters.sortBy}
                 onChange={(e) => hf("sortBy", e.target.value)}
               >
+                <option value="deadline">Deadline</option>
+                <option value="difficulty">Difficulty</option>
                 <option value="createdAt">Newest</option>
                 <option value="points">XP</option>
+                <option value="title">Title</option>
               </select>
             </div>
           </div>

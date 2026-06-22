@@ -17,14 +17,13 @@ const buildChallengeQuery = ({
   difficulty,
   category,
   setId,
-  sortBy,
-  sortDir,
 }) => {
   const params = new URLSearchParams();
   params.set("page", page);
   params.set("limit", limit);
-  params.set("sortBy", sortBy);
-  params.set("sortDir", sortDir);
+  // Always fetch by createdAt desc; sorting is handled client-side
+  params.set("sortBy", "createdAt");
+  params.set("sortDir", "desc");
   if (search) params.set("search", search);
   if (difficulty) params.set("difficulty", difficulty);
   if (category) params.set("category", category);
@@ -166,8 +165,8 @@ const Missions = () => {
     category: "",
     status: "All", // 'All', 'Accepted', 'Pending'
     setId: initialSetId,
-    sortBy: "createdAt",
-    sortDir: "desc",
+    sortBy: "deadline",
+    sortDir: "asc",
     grouping: "none", // 'none', 'weekly', 'monthly'
   });
   const [viewMode, setViewMode] = useState(
@@ -315,10 +314,44 @@ const Missions = () => {
     });
   }, [challenges, filters.status, subsMap]);
 
-  const groupedChallenges = useMemo(() => {
-    if (filters.grouping === 'none') return { "All Missions": statusFilteredChallenges };
+  // Sort by selected criteria. Deadline is P1 only when 'deadline' is selected.
+  const DIFF_ORDER = { Easy: 1, Medium: 2, Hard: 3 };
+  const sortedChallenges = useMemo(() => {
+    return [...statusFilteredChallenges].sort((a, b) => {
+      if (filters.sortBy === 'deadline') {
+        const now = Date.now();
+        // Sort by question-set deadline (earliest upcoming first, then past, then no-deadline last)
+        const dlA = a.questionSetId?.deadline ? new Date(a.questionSetId.deadline).getTime() : Infinity;
+        const dlB = b.questionSetId?.deadline ? new Date(b.questionSetId.deadline).getTime() : Infinity;
+        
+        const isPastA = dlA < now;
+        const isPastB = dlB < now;
 
-    return statusFilteredChallenges.reduce((acc, ch) => {
+        if (isPastA !== isPastB) return isPastA ? 1 : -1; // Upcoming before past
+        if (dlA !== dlB) return dlA - dlB; // Ascending order
+      } else if (filters.sortBy === 'difficulty') {
+        const dA = DIFF_ORDER[a.difficulty] || 4;
+        const dB = DIFF_ORDER[b.difficulty] || 4;
+        if (dA !== dB) return dA - dB;
+      } else if (filters.sortBy === 'points') {
+        if ((a.points || 0) !== (b.points || 0)) return (a.points || 0) - (b.points || 0);
+      } else if (filters.sortBy === 'title') {
+        const cmp = (a.title || '').localeCompare(b.title || '');
+        if (cmp !== 0) return cmp;
+      } else if (filters.sortBy === 'createdAt') {
+        const tA = new Date(a.createdAt || 0).getTime();
+        const tB = new Date(b.createdAt || 0).getTime();
+        if (tA !== tB) return tB - tA;
+      }
+      // Tie-breaker: newest first
+      return new Date(b.createdAt || 0) - new Date(a.createdAt || 0);
+    });
+  }, [statusFilteredChallenges, filters.sortBy]);
+
+  const groupedChallenges = useMemo(() => {
+    if (filters.grouping === 'none') return { "All Missions": sortedChallenges };
+
+    return sortedChallenges.reduce((acc, ch) => {
       const date = new Date(ch.createdAt || FALLBACK_CREATED_AT);
       let key = "";
 
@@ -341,7 +374,7 @@ const Missions = () => {
       acc[key].push(ch);
       return acc;
     }, {});
-  }, [statusFilteredChallenges, filters.grouping]);
+  }, [sortedChallenges, filters.grouping]);
 
   const MotionBlock = motion.div;
 
@@ -414,9 +447,10 @@ const Missions = () => {
           value={filters.sortBy}
           onChange={(e) => handleFilterChange("sortBy", e.target.value)}
         >
-          <option value="createdAt">Recommended</option>
-          <option value="points">XP Points</option>
+          <option value="deadline">Deadline</option>
           <option value="difficulty">Difficulty</option>
+          <option value="createdAt">Newest</option>
+          <option value="points">XP Points</option>
           <option value="title">Title</option>
         </select>
 
@@ -526,8 +560,8 @@ const Missions = () => {
                 search: "",
                 difficulty: "",
                 category: "",
-                sortBy: "createdAt",
-                sortDir: "desc",
+                sortBy: "deadline",
+                sortDir: "asc",
               })
             }
           />

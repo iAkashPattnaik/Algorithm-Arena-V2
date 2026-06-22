@@ -54,7 +54,7 @@ const getChallenges = async (req, res, next) => {
     let total;
     let challenges;
 
-    if (sortBy === 'createdAt') {
+    if (sortBy === 'recommended') {
       const countPromise = Challenge.countDocuments(filter);
       const aggPromise = Challenge.aggregate([
         { $match: filter },
