@@ -301,7 +301,7 @@ const Dashboard = () => {
 
                       <p className="text-secondary text-sm leading-relaxed mb-6 max-w-md">
                         {activeSet
-                          ? `Target Level: ${activeSet.targetLevel} · ${activeSet.questions?.length || 0} questions `
+                          ? `Target Level: ${activeSet.targetLevel?.toLowerCase() === "both" ? "Beginner and intermediate" : activeSet.targetLevel} · ${activeSet.questions?.length || 0} questions `
                           : "Push your limits with this week's elite challenge. Solve complex optimizations and climb the global leaderboards."}
                       </p>
 
