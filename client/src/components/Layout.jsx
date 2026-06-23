@@ -3,6 +3,7 @@ import { AnimatePresence, motion } from "framer-motion";
 import { Outlet, useLocation } from "react-router-dom";
 import Navbar from "./Navbar";
 import Logo from "../components/Logo";
+import Footer from "../components/Footer";
 import { useIdleTimeout } from "../hooks/useIdleTimeout";
 import toast from "react-hot-toast";
 
@@ -57,21 +58,7 @@ const Layout = ({ onLogout }) => {
       })()}
 
       {/* Footer */}
-      <footer
-        className="relative z-10 mt-auto py-6 w-full"
-        style={{
-          borderTop: `1px solid rgba(var(--accent-rgb), 0.08)`,
-          background: `rgba(var(--accent-rgb), 0.02)`,
-        }}
-      >
-        <div className="flex flex-col sm:flex-row items-center justify-center gap-3">
-          <Logo variant="gdg" size="w-10 h-10" imgClassName="opacity-100" />
-          <p className="text-xs text-secondary tracking-wide text-center">
-            © 2026 Algorithm Arena ·{" "}
-            <span className="text-primary font-bold">GDG On Campus – SOA ITER</span>
-          </p>
-        </div>
-      </footer>
+      <Footer />
     </div>
   );
 };

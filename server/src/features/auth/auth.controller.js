@@ -90,8 +90,8 @@ const googleAuth = async (req, res, next) => {
       return res.status(503).json({ success: false, message: 'Firebase Auth is not configured' });
     }
 
-    // 1. Verify Firebase ID token checking for revocation
-    const decodedToken = await firebaseAuth.verifyIdToken(idToken, true);
+    // 1. Verify Firebase ID token locally (without making an extra network request to check revocation to prevent timeouts)
+    const decodedToken = await firebaseAuth.verifyIdToken(idToken);
     const { uid, email, picture, email_verified } = decodedToken;
 
     if (!email) {

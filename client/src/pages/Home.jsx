@@ -3,18 +3,19 @@ import { Link } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
 import { motion, useScroll, useTransform } from "framer-motion";
 import {
-  FiArrowRight,
-  FiClock,
   FiActivity,
+  FiArrowRight,
   FiZap,
-  FiAward,
   FiUsers,
+  FiAward,
+  FiClock,
 } from "react-icons/fi";
 import Card from "../components/Card";
 import SkeletonCard from "../components/SkeletonCard";
 import { useAuth } from "../context/useAuth";
 import { api } from "../lib/api";
 import Logo from "../components/Logo";
+import Footer from "../components/Footer";
 
 
 const MotionBlock = motion.div;
@@ -808,21 +809,7 @@ const Home = () => {
       )}
 
       {/* ── Footer ── */}
-      <footer
-        className="relative z-10 mt-auto py-6 w-full"
-        style={{
-          borderTop: `1px solid rgba(var(--accent-rgb), 0.08)`,
-          background: `rgba(var(--accent-rgb), 0.02)`,
-        }}
-      >
-        <div className="flex flex-col sm:flex-row items-center justify-center gap-3">
-          <Logo variant="gdg" size="w-10 h-10" imgClassName="opacity-100" />
-          <p className="text-xs text-secondary tracking-wide text-center">
-            © 2026 Algorithm Arena ·{" "}
-            <span className="text-primary font-bold">GDG On Campus – SOA ITER</span>
-          </p>
-        </div>
-      </footer>
+      <Footer />
     </div>
   );
 };
