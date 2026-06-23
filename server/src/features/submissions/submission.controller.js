@@ -222,7 +222,7 @@ const getLeaderboard = async (req, res, next) => {
       { $unwind: '$user' },
       {
         $addFields: {
-          totalPoints: '$challengePoints',
+          totalPoints: window === 'all' ? { $ifNull: ['$user.points', 0] } : '$challengePoints',
         },
       },
       { $sort: { totalPoints: -1, solvedCount: -1 } },
