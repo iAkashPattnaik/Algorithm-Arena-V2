@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import toast from 'react-hot-toast';
 import { signInWithPopup, signInWithRedirect, getRedirectResult } from 'firebase/auth';
@@ -38,7 +38,7 @@ const Login = ({ onLoginSuccess }) => {
     return () => observer.disconnect();
   }, []);
 
-  const handleAuthSuccess = async (idToken) => {
+  const handleAuthSuccess = useCallback(async (idToken) => {
     try {
       // Send Firebase ID token to our server
       const res = await api.post('/api/auth/google', { idToken });
@@ -78,7 +78,7 @@ const Login = ({ onLoginSuccess }) => {
       toast.error(message);
       setLoading(false);
     }
-  };
+  }, [navigate, login, onLoginSuccess]);
 
   useEffect(() => {
     if (redirectChecked) return;
@@ -104,7 +104,7 @@ const Login = ({ onLoginSuccess }) => {
     };
 
     handleRedirectResult();
-  }, [navigate, login, onLoginSuccess]);
+  }, [navigate, login, onLoginSuccess, handleAuthSuccess]);
 
   const handleGoogleSignIn = async () => {
     setLoading(true);
