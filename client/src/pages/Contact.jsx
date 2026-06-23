@@ -143,7 +143,7 @@ const Contact = () => {
                   href={getMailLink()}
                   target="_blank"
                   rel="noopener noreferrer"
-                  onClick={(e) => {
+                  onClick={() => {
                     navigator.clipboard.writeText(email);
                     toast.success("Opening Mail... (Email copied just in case!)");
                   }}
