@@ -11,12 +11,12 @@ import toast from 'react-hot-toast';
 
 import { USE_MOCK } from '../../lib/mockData';
 
-const MembersTab = () => {
+const MembersTab = ({ initialClanFilter }) => {
   const queryClient = useQueryClient();
   const { user, confirmSessionIfNeeded } = useAuth();
   const [search, setSearch] = useState('');
   const [levelFilter, setLevelFilter] = useState('');
-  const [clanFilter, setClanFilter] = useState('');
+  const [clanFilter, setClanFilter] = useState(initialClanFilter || '');
   const [menuOpen, setMenuOpen] = useState(null);
   const [menuPos, setMenuPos] = useState({ top: 0, right: 0 });
   const canManageUsers = canManageClanGlobally(user);
@@ -125,6 +125,21 @@ const MembersTab = () => {
     }
   });
 
+  const removeChiefMutation = useMutation({
+    mutationFn: async (clanId) => {
+      return api.delete(`/api/clans/${clanId}/chief`);
+    },
+    onSuccess: () => {
+      toast.success("Clan Chief demoted to member successfully");
+      queryClient.invalidateQueries({ queryKey: ['admin-all-users'] });
+      queryClient.invalidateQueries({ queryKey: ['admin-clans-list'] });
+      setMenuOpen(null);
+    },
+    onError: (err) => {
+      toast.error(err.response?.data?.message || "Failed to demote chief");
+    }
+  });
+
   const unbanUserMutation = useMutation({
     mutationFn: async (userId) => {
       return api.put(`/api/users/${userId}/unban`);
@@ -164,7 +179,12 @@ const MembersTab = () => {
                         (u.regNo && u.regNo.toLowerCase().includes(s)) ||
                         (u.email && u.email.toLowerCase().includes(s));
     const matchLevel = levelFilter ? u.codingLevel === levelFilter : true;
-    const matchClan = clanFilter ? u.clan?._id === clanFilter || u.clan === clanFilter : true;
+    let matchClan = true;
+    if (clanFilter === 'unassigned') {
+      matchClan = !u.clan;
+    } else if (clanFilter) {
+      matchClan = u.clan?._id === clanFilter || u.clan === clanFilter;
+    }
     return matchSearch && matchLevel && matchClan;
   });
 
@@ -446,12 +466,20 @@ const MembersTab = () => {
                     )}
                     {menuUser.role === 'clan-chief' && (
                       <button
-                        onClick={() => {
-                          const clanId = menuUser.clan?._id || menuUser.clan;
-                          if (clanId) {
-                            removeChiefMutation.mutate(clanId);
-                          } else {
-                            handleRoleChange(menuUser, 'user');
+                        onClick={async () => {
+                          if (!canManageUsers) return;
+                          try {
+                            const clanId = typeof menuUser.clan === 'object' ? menuUser.clan?._id : menuUser.clan;
+                            if (clanId) {
+                              await confirmSessionIfNeeded();
+                              await removeChiefMutation.mutateAsync(clanId);
+                            } else {
+                              await handleRoleChange(menuUser, 'user');
+                            }
+                          } catch (err) {
+                            if (err.message !== 'User cancelled re-authentication') {
+                              toast.error(err.response?.data?.message || "Failed to demote chief");
+                            }
                           }
                         }}
                         disabled={!canManageUsers || removeChiefMutation.isPending}
@@ -460,7 +488,7 @@ const MembersTab = () => {
                         <FiUserCheck className="text-green-400" /> Make Member
                       </button>
                     )}
-                    {menuUser.role === 'admin' && (
+                    {menuUser.role === 'admin' && isSuperAdmin && (
                       <button
                         onClick={() => handleRoleChange(menuUser, 'user')}
                         disabled={!canManageUsers}
