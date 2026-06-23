@@ -176,118 +176,69 @@ const getLeaderboard = async (req, res, next) => {
     const { window = 'all', page = 1, limit = 20 } = req.query;
     const skip = (Number(page) - 1) * Number(limit);
 
-    const match = { status: 'Accepted' };
-    if (window !== 'all') {
-      const days = window === '7d' ? 7 : 30;
-      match.submittedAt = { $gte: new Date(Date.now() - days * 24 * 60 * 60 * 1000) };
-    } else {
-      const User = require('../users/User.model');
-      const users = await User.find({ role: { $ne: 'superAdmin' } })
-        .sort({ points: -1, solvedProblems: -1 })
-        .select('username profilePicture points solvedProblems')
-        .skip(skip)
-        .limit(Number(limit))
-        .lean();
-      
-      const total = await User.countDocuments({ role: { $ne: 'superAdmin' } });
+    let activeUserIds = null;
 
-      const data = users.map((u, i) => ({
+    if (window !== 'all') {
+      const match = { status: 'Accepted' };
+      if (window === '30d') {
+        const now = new Date();
+        match.submittedAt = { $gte: new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), 1)) };
+      } else if (window === '7d') {
+        match.submittedAt = { $gte: new Date(Date.now() - 7 * 24 * 60 * 60 * 1000) };
+      }
+      
+      const activeIds = await Submission.distinct('userId', match);
+      activeUserIds = activeIds;
+    }
+
+    const User = require('../users/User.model');
+    const userFilter = { role: { $ne: 'superAdmin' } };
+    if (activeUserIds !== null) {
+      userFilter._id = { $in: activeUserIds };
+    }
+
+    const users = await User.find(userFilter)
+      .sort({ points: -1, solvedProblems: -1 })
+      .select('username profilePicture points solvedProblems')
+      .skip(skip)
+      .limit(Number(limit))
+      .lean();
+    
+    const total = await User.countDocuments(userFilter);
+
+    // Compute shared ranks for users on this page
+    const uniquePoints = [...new Set(users.map(u => u.points))];
+    const firstPersonRanks = {};
+    
+    await Promise.all(uniquePoints.map(async (p) => {
+      const count = await User.countDocuments({ ...userFilter, points: { $gt: p } });
+      firstPersonRanks[p] = count + 1;
+    }));
+
+    const data = users.map((u, i) => {
+      const strictRank = skip + i + 1;
+      let displayRank = strictRank;
+      
+      if (strictRank > 3) {
+        displayRank = Math.max(4, firstPersonRanks[u.points]);
+      }
+
+      return {
         _id: u._id,
         username: u.username,
         profilePicture: u.profilePicture,
         solvedCount: u.solvedProblems || 0,
         totalPoints: u.points || 0,
-        rank: skip + i + 1,
-      }));
-
-      return sendSuccess(res, {
-        data,
-        meta: {
-          total,
-          page: Number(page),
-          limit: Number(limit),
-          totalPages: Math.ceil(total / Number(limit)),
-        },
-      });
-    }
-
-    // All pagination and ranking happen inside MongoDB — nothing is loaded into Node RAM.
-    // $setWindowFields computes dense rank at the DB level (requires MongoDB 5.0+).
-    // $facet returns total count + the current page in a single round-trip.
-    const [result] = await Submission.aggregate([
-      { $match: match },
-      // 1. Group by userId and challengeId to count each challenge only once per user
-      {
-        $group: {
-          _id: { userId: '$userId', challengeId: '$challengeId' }
-        }
-      },
-      // 2. Lookup the challenge details
-      {
-        $lookup: {
-          from: 'challenges',
-          localField: '_id.challengeId',
-          foreignField: '_id',
-          as: 'challenge',
-        },
-      },
-      { $unwind: '$challenge' },
-      // 3. Group by userId to sum up total distinct points and solved count
-      {
-        $group: {
-          _id: '$_id.userId',
-          solvedCount: { $sum: 1 },
-          challengePoints: { $sum: '$challenge.points' },
-        },
-      },
-      {
-        $lookup: {
-          from: 'users',
-          localField: '_id',
-          foreignField: '_id',
-          as: 'user',
-        },
-      },
-      { $unwind: '$user' },
-      {
-        $addFields: {
-          totalPoints: window === 'all' ? { $ifNull: ['$user.points', 0] } : '$challengePoints',
-        },
-      },
-      { $sort: { totalPoints: -1, solvedCount: -1 } },
-      {
-        $project: {
-          _id: 1,
-          username: '$user.username',
-          profilePicture: '$user.profilePicture',
-          solvedCount: 1,
-          totalPoints: 1,
-        },
-      },
-      {
-        $setWindowFields: {
-          sortBy: { totalPoints: -1 },
-          output: { rank: { $denseRank: {} } },
-        },
-      },
-      {
-        $facet: {
-          metadata: [{ $count: 'total' }],
-          data: [{ $skip: skip }, { $limit: Number(limit) }],
-        },
-      },
-    ]);
-
-    const total = result?.metadata[0]?.total ?? 0;
-    const data = result?.data ?? [];
+        rank: displayRank,
+      };
+    });
 
     return sendSuccess(res, {
       data,
       meta: {
-        window,
+        total,
         page: Number(page),
         limit: Number(limit),
-        total,
         totalPages: Math.ceil(total / Number(limit)) || 1,
       },
     });

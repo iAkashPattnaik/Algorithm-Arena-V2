@@ -130,7 +130,7 @@ const getProfileStats = async (req, res, next) => {
       heatmapMap[item._id] = item.count;
     });
 
-    const user = await User.findById(req.user.id).select('createdAt');
+    const user = await User.findById(req.user.id).select('createdAt points solvedProblems');
     const joinDate = user?.createdAt || new Date();
     
     // Normalize to UTC midnight for consistency with $dateToString
