@@ -197,7 +197,7 @@ const CategorySection = ({ category, badges, index, onSetFeatured, featuredBadge
             badge={badge} 
             index={i} 
             onSetFeatured={onSetFeatured}
-            isFeatured={featuredBadgeId === badge._id}
+            isFeatured={featuredBadgeId === badge._id?.toString()}
           />
         ))}
       </div>
@@ -220,16 +220,7 @@ const Badges = () => {
     staleTime: 60000,
   });
 
-  const { data: userProfile } = useQuery({
-    queryKey: ['user-profile'],
-    queryFn: async () => {
-      const res = await api.get('/api/users/me'); // Or standard route
-      return res.data.data;
-    },
-    staleTime: 60000,
-  });
-
-  // We actually need the user's featuredBadge ID. 
+  // We actually need the user's featuredBadge ID.
   // We can fetch it via /api/profile/stats which returns user info or /api/auth/me
   // Wait, the currently logged in user is in auth context. But we can just use the auth/me endpoint or profile
   const { data: authUser } = useQuery({
@@ -241,7 +232,10 @@ const Badges = () => {
     staleTime: 60000,
   });
 
-  const featuredBadgeId = authUser?.featuredBadge;
+  // featuredBadge may be a populated object or a raw ID string
+  const featuredBadgeId = authUser?.featuredBadge?._id
+    ? authUser.featuredBadge._id.toString()
+    : authUser?.featuredBadge?.toString() || null;
 
   const setFeaturedMutation = useMutation({
     mutationFn: async (badgeId) => {

@@ -19,4 +19,3 @@ router.post('/award/:userId', protect, awardBadge);
 router.delete('/revoke/:userId/:badgeId', protect, revokeBadge);
 
 module.exports = router;
-// Trigger nodemon restart

@@ -3,6 +3,7 @@ import toast from 'react-hot-toast';
 import { useNavigate } from 'react-router-dom';
 import { useSocket } from '../hooks/useSocket';
 import { FiZap, FiAward } from 'react-icons/fi';
+import { api } from '../lib/api';
 import { useAuth } from '../context/useAuth';
 
 const NotificationListener = () => {
@@ -33,7 +34,7 @@ const NotificationListener = () => {
   });
 
   // Listen for leaderboard updates (optional: show a generic toast or just let the page handle it)
-  useSocket('leaderboard_update', (data) => {
+  useSocket('leaderboard_update', () => {
     // Other components (like Leaderboard/Clans) will refetch automatically
   });
 
@@ -47,7 +48,6 @@ const NotificationListener = () => {
   const checkBadges = React.useCallback(async (notify = false) => {
     if (!user) return;
     try {
-      const { api } = require('../lib/api');
       const res = await api.get('/api/badges');
       const badges = res.data?.data || [];
       const newlyUnlocked = [];
@@ -90,6 +90,7 @@ const NotificationListener = () => {
           });
         });
       }
+    // eslint-disable-next-line no-unused-vars
     } catch (e) {
       // ignore
     }

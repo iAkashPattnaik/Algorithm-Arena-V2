@@ -165,6 +165,10 @@ const ProfileSidebar = ({ user, summary, profile, badges }) => {
     });
   };
 
+  const clanBadgeCount = React.useMemo(() => {
+    return (badges || []).filter(b => b.isChiefBadge && b.isUnlocked).length;
+  }, [badges]);
+
   const sortedBadges = React.useMemo(() => {
     const baseBadges = badges?.length
       ? badges
