@@ -974,4 +974,75 @@ test('getAdminDashboardSummary calculates live completions and avgCompletion', a
   assert.equal(clanBetaPerf.completion, 0);
 });
 
+test('getClanLeaderboard window=all aggregates points and solved problems correctly using aggregation pipeline', async () => {
+  const admin = await registerUser({ username: 'admin_leaderboard_test', email: 'admin_leaderboard@example.com' });
+  await User.findByIdAndUpdate(admin.id, { role: 'admin' });
+
+  const adminLogin = await request(app).post('/api/auth/login').send({
+    email: 'admin_leaderboard@example.com',
+    password: 'strong-password',
+  });
+  const adminToken = adminLogin.body.data.token;
+
+  // Create two clans
+  const clanARes = await request(app)
+    .post('/api/clans')
+    .set('Authorization', `Bearer ${adminToken}`)
+    .send({ name: 'Clan Gamma', tag: 'GAM' });
+  const clanAId = clanARes.body.data._id;
+
+  const clanBRes = await request(app)
+    .post('/api/clans')
+    .set('Authorization', `Bearer ${adminToken}`)
+    .send({ name: 'Clan Delta', tag: 'DELT' });
+  const clanBId = clanBRes.body.data._id;
+
+  // Create users with points and solvedProblems
+  const user1 = await registerUser({ username: 'leader_u1', email: 'leader_u1@example.com' });
+  const user2 = await registerUser({ username: 'leader_u2', email: 'leader_u2@example.com' });
+
+  // Update points/solvedProblems directly in DB
+  await User.findByIdAndUpdate(user1.id, { points: 150, solvedProblems: 10 });
+  await User.findByIdAndUpdate(user2.id, { points: 300, solvedProblems: 20 });
+
+  // Add user1 to Clan Gamma, user2 to Clan Delta
+  await request(app)
+    .post(`/api/clans/${clanAId}/members`)
+    .set('Authorization', `Bearer ${adminToken}`)
+    .send({ userId: user1.id });
+
+  await request(app)
+    .post(`/api/clans/${clanBId}/members`)
+    .set('Authorization', `Bearer ${adminToken}`)
+    .send({ userId: user2.id });
+
+  const res = await request(app)
+    .get('/api/clans/leaderboard?window=all')
+    .set('Authorization', `Bearer ${adminToken}`);
+
+  assert.equal(res.status, 200);
+  assert.equal(res.body.success, true);
+  assert.ok(Array.isArray(res.body.data));
+
+  // Clan Delta (user2: 300 pts) should be ranked 1st
+  // Clan Gamma (user1: 150 pts) should be ranked 2nd
+  const leaderData = res.body.data;
+  const deltaRank = leaderData.find(c => c.name === 'Clan Delta');
+  const gammaRank = leaderData.find(c => c.name === 'Clan Gamma');
+
+  assert.ok(deltaRank);
+  assert.ok(gammaRank);
+
+  assert.equal(deltaRank.totalPoints, 300);
+  assert.equal(deltaRank.solvedCount, 20);
+  assert.equal(deltaRank.memberCount, 1);
+  assert.equal(deltaRank.rank, 1);
+
+  assert.equal(gammaRank.totalPoints, 150);
+  assert.equal(gammaRank.solvedCount, 10);
+  assert.equal(gammaRank.memberCount, 1);
+  assert.equal(gammaRank.rank, 2);
+});
+
+
 
