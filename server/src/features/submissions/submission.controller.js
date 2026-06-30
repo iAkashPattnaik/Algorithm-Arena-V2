@@ -177,25 +177,95 @@ const getLeaderboard = async (req, res, next) => {
     const { window = 'all', page = 1, limit = 20 } = req.query;
     const skip = (Number(page) - 1) * Number(limit);
 
-    let result = [];
+    let data = [];
+    let total = 0;
+    let topThree = [];
 
     if (window === 'all') {
       const User = require('../users/User.model');
-      const users = await User.find({ 
+      
+      const filter = {
         role: { $nin: ['admin', 'superAdmin', 'clan-chief'] },
         username: { $exists: true, $nin: [null, ''] }
-      })
+      };
+
+      // Get total count of users matching the filter
+      total = await User.countDocuments(filter);
+
+      // Fetch only the users for the current page
+      const users = await User.find(filter)
         .sort({ points: -1, solvedProblems: -1 })
+        .skip(skip)
+        .limit(Number(limit))
         .select('username profilePicture points solvedProblems')
         .lean();
-      
-      result = users.map((u) => ({
-        _id: u._id,
-        username: u.username,
-        profilePicture: u.profilePicture,
-        solvedCount: u.solvedProblems || 0,
-        totalPoints: u.points || 0,
-      }));
+
+      // Fetch top 3 users to populate the podium
+      const topThreeUsers = await User.find(filter)
+        .sort({ points: -1, solvedProblems: -1 })
+        .limit(3)
+        .select('username profilePicture points solvedProblems')
+        .lean();
+
+      const topThreeMapped = [];
+      topThreeUsers.forEach((u, i) => {
+        let rank;
+        if (i === 0) {
+          rank = 1;
+        } else {
+          const prev = topThreeUsers[i - 1];
+          if (u.points === prev.points && u.solvedProblems === prev.solvedProblems) {
+            rank = topThreeMapped[i - 1].rank;
+          } else {
+            rank = i + 1;
+          }
+        }
+        topThreeMapped.push({
+          _id: u._id,
+          username: u.username,
+          profilePicture: u.profilePicture,
+          solvedCount: u.solvedProblems || 0,
+          totalPoints: u.points || 0,
+          rank,
+        });
+      });
+      topThree = topThreeMapped;
+
+      // Assign ranks for the current page's slice using standard competitive ranking
+      let rankOfFirst = 1;
+      if (skip > 0 && users.length > 0) {
+        const firstUser = users[0];
+        const countHigher = await User.countDocuments({
+          ...filter,
+          $or: [
+            { points: { $gt: firstUser.points } },
+            { points: firstUser.points, solvedProblems: { $gt: firstUser.solvedProblems } }
+          ]
+        });
+        rankOfFirst = countHigher + 1;
+      }
+
+      users.forEach((u, i) => {
+        let rank;
+        if (i === 0) {
+          rank = rankOfFirst;
+        } else {
+          const prev = users[i - 1];
+          if (u.points === prev.points && u.solvedProblems === prev.solvedProblems) {
+            rank = data[i - 1].rank;
+          } else {
+            rank = skip + i + 1;
+          }
+        }
+        data.push({
+          _id: u._id,
+          username: u.username,
+          profilePicture: u.profilePicture,
+          solvedCount: u.solvedProblems || 0,
+          totalPoints: u.points || 0,
+          rank,
+        });
+      });
     } else {
       const XpLog = require('../users/XpLog.model');
       const Submission = require('../submissions/Submission.model');
@@ -252,7 +322,7 @@ const getLeaderboard = async (req, res, next) => {
         username: { $exists: true, $nin: [null, ''] }
       }).select('username profilePicture').lean();
 
-      result = users.map(u => {
+      let result = users.map(u => {
         const xp = xpStats.find(x => x._id.toString() === u._id.toString());
         return {
           _id: u._id,
@@ -264,26 +334,27 @@ const getLeaderboard = async (req, res, next) => {
       });
 
       result.sort((a, b) => b.totalPoints - a.totalPoints || b.solvedCount - a.solvedCount);
-    }
 
-    // Apply custom tie-breaker logic in memory
-    let currentRank = 1;
-    result.forEach((u, i) => {
-      if (i < 3) {
-        u.rank = i + 1;
-        currentRank = i + 1;
-      } else {
-        const prev = result[i - 1];
-        if (u.totalPoints !== prev.totalPoints || u.solvedCount !== prev.solvedCount) {
-          currentRank++;
+      // Apply custom tie-breaker logic in memory
+      let currentRank = 1;
+      result.forEach((u, i) => {
+        if (i < 3) {
+          u.rank = i + 1;
+          currentRank = i + 1;
+        } else {
+          const prev = result[i - 1];
+          if (u.totalPoints !== prev.totalPoints || u.solvedCount !== prev.solvedCount) {
+            currentRank++;
+          }
+          u.rank = Math.max(4, currentRank);
+          currentRank = u.rank;
         }
-        u.rank = Math.max(4, currentRank);
-        currentRank = u.rank;
-      }
-    });
+      });
 
-    const total = result.length;
-    const data = result.slice(skip, skip + Number(limit));
+      total = result.length;
+      data = result.slice(skip, skip + Number(limit));
+      topThree = result.slice(0, 3);
+    }
 
     return sendSuccess(res, {
       data,
@@ -292,7 +363,7 @@ const getLeaderboard = async (req, res, next) => {
         page: Number(page),
         limit: Number(limit),
         totalPages: Math.ceil(total / Number(limit)) || 1,
-        topThree: result.slice(0, 3),
+        topThree,
       },
     });
   } catch (err) {

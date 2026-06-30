@@ -652,3 +652,68 @@ test('submission with userFeedback validation and storage', async () => {
   assert.equal(submissionWithFeedbackRes.body.data.userFeedback, 'I had some issues with environment timeouts.');
 });
 
+test('leaderboard window=all pagination, tie-breaking, and topThree calculation works correctly', async () => {
+  // Clear any existing users to prevent noise
+  await User.deleteMany({});
+
+  // Register 5 users
+  const userA = await registerUser({ username: 'user_a', email: 'user_a@example.com' });
+  const userB = await registerUser({ username: 'user_b', email: 'user_b@example.com' });
+  const userC = await registerUser({ username: 'user_c', email: 'user_c@example.com' });
+  const userD = await registerUser({ username: 'user_d', email: 'user_d@example.com' });
+  const userE = await registerUser({ username: 'user_e', email: 'user_e@example.com' });
+
+  // Manually update points/solvedCount in DB to construct a structured leaderboard
+  await User.findByIdAndUpdate(userA.id, { points: 500, solvedProblems: 10 });
+  await User.findByIdAndUpdate(userB.id, { points: 400, solvedProblems: 8 });
+  await User.findByIdAndUpdate(userC.id, { points: 400, solvedProblems: 8 }); // Tie with user_b
+  await User.findByIdAndUpdate(userD.id, { points: 300, solvedProblems: 5 });
+  await User.findByIdAndUpdate(userE.id, { points: 200, solvedProblems: 2 });
+
+  // Page 1, Limit 2
+  const page1 = await request(app)
+    .get('/api/submissions/leaderboard?window=all&page=1&limit=2')
+    .set('Authorization', `Bearer ${userA.token}`);
+
+  assert.equal(page1.status, 200);
+  assert.equal(page1.body.data.length, 2);
+  assert.equal(page1.body.data[0].username, 'user_a');
+  assert.equal(page1.body.data[0].rank, 1);
+  assert.equal(page1.body.data[1].username, 'user_b');
+  assert.equal(page1.body.data[1].rank, 2);
+  
+  assert.equal(page1.body.meta.total, 5);
+  assert.equal(page1.body.meta.page, 1);
+  assert.equal(page1.body.meta.limit, 2);
+  assert.equal(page1.body.meta.totalPages, 3);
+  assert.equal(page1.body.meta.topThree.length, 3);
+  assert.equal(page1.body.meta.topThree[0].username, 'user_a');
+  assert.equal(page1.body.meta.topThree[0].rank, 1);
+  assert.equal(page1.body.meta.topThree[1].username, 'user_b');
+  assert.equal(page1.body.meta.topThree[1].rank, 2);
+  assert.equal(page1.body.meta.topThree[2].username, 'user_c');
+  assert.equal(page1.body.meta.topThree[2].rank, 2);
+
+  // Page 2, Limit 2
+  const page2 = await request(app)
+    .get('/api/submissions/leaderboard?window=all&page=2&limit=2')
+    .set('Authorization', `Bearer ${userA.token}`);
+
+  assert.equal(page2.status, 200);
+  assert.equal(page2.body.data.length, 2);
+  assert.equal(page2.body.data[0].username, 'user_c');
+  assert.equal(page2.body.data[0].rank, 2); // User C has same points/solved as User B, so gets rank 2
+  assert.equal(page2.body.data[1].username, 'user_d');
+  assert.equal(page2.body.data[1].rank, 4); // User D has rank 4 since there are 3 users ahead of them
+
+  // Page 3, Limit 2
+  const page3 = await request(app)
+    .get('/api/submissions/leaderboard?window=all&page=3&limit=2')
+    .set('Authorization', `Bearer ${userA.token}`);
+
+  assert.equal(page3.status, 200);
+  assert.equal(page3.body.data.length, 1);
+  assert.equal(page3.body.data[0].username, 'user_e');
+  assert.equal(page3.body.data[0].rank, 5); // User E has rank 5 since there are 4 users ahead of them
+});
+
