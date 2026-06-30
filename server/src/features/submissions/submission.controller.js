@@ -73,6 +73,8 @@ const getSubmissions = async (req, res, next) => {
       sortDir = 'desc',
     } = req.query;
 
+    const safeLimit = Math.min(Number(limit) || 10, 100);
+
     const scopeAccess = await getActorMemberIdsInScope(req.user);
     if (!scopeAccess.allowed) {
       return res.status(403).json({ success: false, message: scopeAccess.reason || 'Not authorized' });
@@ -89,7 +91,7 @@ const getSubmissions = async (req, res, next) => {
           data: [],
           meta: {
             page,
-            limit,
+            limit: safeLimit,
             total: 0,
             totalPages: 1,
           },
@@ -117,7 +119,7 @@ const getSubmissions = async (req, res, next) => {
       if (to) filter.submittedAt.$lte = new Date(to);
     }
 
-    const skip = (page - 1) * limit;
+    const skip = (Number(page) - 1) * safeLimit;
     const sort = { [sortBy]: sortDir === 'asc' ? 1 : -1 };
 
     const [total, submissions] = await Promise.all([
@@ -128,16 +130,16 @@ const getSubmissions = async (req, res, next) => {
         .populate('reviewedBy', 'username role')
         .sort(sort)
         .skip(skip)
-        .limit(limit),
+        .limit(safeLimit),
     ]);
 
     return sendSuccess(res, {
       data: submissions,
       meta: {
         page,
-        limit,
+        limit: safeLimit,
         total,
-        totalPages: Math.ceil(total / limit) || 1,
+        totalPages: Math.ceil(total / safeLimit) || 1,
       },
     });
   } catch (err) {

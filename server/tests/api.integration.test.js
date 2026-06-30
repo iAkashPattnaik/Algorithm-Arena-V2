@@ -833,3 +833,56 @@ test('clan chief lookup is cached and behaves correctly on mutations', async () 
   assert.ok(!members2.memberIds.includes(memberUser.id));
 });
 
+test('getChallenges and getSubmissions limit parameter clamping', async () => {
+  const user = await registerUser({ username: 'clamp_user', email: 'clamp@example.com' });
+  const Challenge = require('../src/features/challenges/Challenge.model.js');
+  
+  // Seed 105 challenges
+  const challengesData = Array.from({ length: 105 }, (_, i) => ({
+    title: `Clamp Challenge ${i}`,
+    description: `Desc ${i}`,
+    difficulty: 'Easy',
+    points: 100,
+    category: 'Logic',
+  }));
+  await Challenge.insertMany(challengesData);
+
+  // Request challenges with limit=50
+  const challengeRes = await request(app)
+    .get('/api/challenges?limit=50')
+    .set('Authorization', `Bearer ${user.token}`);
+
+  assert.equal(challengeRes.status, 200);
+  assert.equal(challengeRes.body.data.length, 50); // Respects limit=50
+  assert.equal(challengeRes.body.meta.limit, 50);
+
+  // Let's also test submissions limit clamping
+  const challenge = await Challenge.findOne();
+  const submissionsData = Array.from({ length: 105 }, (_, i) => ({
+    userId: user.id,
+    challengeId: challenge._id,
+    code: `// code ${i}`,
+    language: 'javascript',
+    status: 'Accepted',
+    submittedAt: new Date(Date.now() - i * 1000),
+  }));
+  await Submission.insertMany(submissionsData);
+
+  // Request submissions with limit=50 using admin credentials
+  const admin = await registerUser({ username: 'clamp_admin', email: 'clamp_admin@example.com' });
+  await User.findByIdAndUpdate(admin.id, { role: 'admin' });
+  const adminLogin = await request(app).post('/api/auth/login').send({
+    email: 'clamp_admin@example.com',
+    password: 'strong-password',
+  });
+  const adminToken = adminLogin.body.data.token;
+
+  const submissionRes = await request(app)
+    .get('/api/submissions?limit=50')
+    .set('Authorization', `Bearer ${adminToken}`);
+
+  assert.equal(submissionRes.status, 200);
+  assert.equal(submissionRes.body.data.length, 50); // Respects limit=50
+  assert.equal(submissionRes.body.meta.limit, 50);
+});
+
