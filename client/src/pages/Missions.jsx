@@ -176,7 +176,7 @@ const Missions = () => {
   };
   const [filters, setFilters] = useState({
     page: 1,
-    limit: 50, // Increase limit when grouping to show all related items
+    limit: 6,
     search: "",
     difficulty: "",
     category: "",
@@ -200,7 +200,10 @@ const Missions = () => {
     queryKey,
     queryFn: async () => {
       try {
-        const qs = buildChallengeQuery(filters);
+        const effectiveFilters = filters.grouping !== 'none'
+          ? { ...filters, limit: 500 }
+          : filters;
+        const qs = buildChallengeQuery(effectiveFilters);
         const res = await api.get(`/api/challenges?${qs}`);
         const data = res.data.data || [];
 

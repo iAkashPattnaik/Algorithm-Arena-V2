@@ -57,6 +57,19 @@ const JUDGE0_URL =
   import.meta.env.VITE_JUDGE0_API_URL || "https://ce.judge0.com";
 
 /**
+ * Normalize output for comparison:
+ * 1. Trim leading/trailing whitespace
+ * 2. Collapse all internal whitespace
+ * 3. Normalize cross-language literals (Python's True/False/None → true/false/null)
+ */
+const LANG_LITERALS = { True: "true", False: "false", None: "null" };
+const normalizeOutput = (s) =>
+  (s ?? "")
+    .trim()
+    .replace(/\s+/g, "")
+    .replace(/\b(True|False|None)\b/g, (m) => LANG_LITERALS[m]);
+
+/**
  * Converts a single test-case arg value to its stdin representation.
  * Arrays → length on first line, then space-separated elements.
  * Nested arrays → row count, then each inner array as "length elements..."
@@ -570,7 +583,7 @@ const ChallengeDetails = () => {
         !hasError &&
         results.every(
           (c) =>
-            c.expected != null && c.stdout?.trim() === c.expected.trim(),
+            c.expected != null && normalizeOutput(c.stdout) === normalizeOutput(c.expected),
         );
 
       if (allPassed) {
@@ -636,11 +649,11 @@ const ChallengeDetails = () => {
       {/* Header */}
       <div className="flex items-center gap-3 pb-1 border-b border-black/10 dark:border-white/10 mb-1.5 shrink-0 px-3 pt-1.5">
         <Link
-          to="/dashboard"
+          to={isReviewMode ? "/chief-panel?tab=review" : "/dashboard"}
           className="flex items-center gap-1 text-secondary hover:text-primary transition-colors text-xs"
         >
           <FiChevronLeft size={14} />
-          <span className="hidden sm:inline">Missions</span>
+          <span className="hidden sm:inline">{isReviewMode ? "Code Reviews" : "Missions"}</span>
         </Link>
         <div className="w-px h-4 bg-black/10 dark:bg-white/10" />
         <a
@@ -1131,11 +1144,11 @@ const ChallengeDetails = () => {
                           const passed =
                             !hasError &&
                             c.expected != null &&
-                            c.stdout?.trim() === c.expected.trim();
+                            normalizeOutput(c.stdout) === normalizeOutput(c.expected);
                           const failed =
                             !hasError &&
                             c.expected != null &&
-                            c.stdout?.trim() !== c.expected.trim();
+                            normalizeOutput(c.stdout) !== normalizeOutput(c.expected);
                           return (
                             <div
                               key={i}

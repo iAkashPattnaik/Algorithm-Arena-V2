@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { useSearchParams } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
 import { motion, AnimatePresence } from 'framer-motion';
 import { FiUsers, FiActivity, FiShield, FiFileText, FiBell, FiAlertCircle, FiAward } from 'react-icons/fi';
@@ -13,7 +14,10 @@ import ChiefReviewTab from './chief/ChiefReviewTab';
 import ChiefBadgesTab from './chief/ChiefBadgesTab';
 
 const ClanChiefPanel = () => {
-  const [activeTab, setActiveTab] = useState('dashboard');
+  const [searchParams] = useSearchParams();
+  const validTabs = ['dashboard', 'members', 'review', 'badges'];
+  const initialTab = validTabs.includes(searchParams.get('tab')) ? searchParams.get('tab') : 'dashboard';
+  const [activeTab, setActiveTab] = useState(initialTab);
 
   const tabs = [
     { id: 'dashboard', label: 'Clan Overview',      icon: FiActivity },
