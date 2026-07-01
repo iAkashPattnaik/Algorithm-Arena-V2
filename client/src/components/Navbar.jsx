@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useMemo } from "react";
 import { Link, useLocation } from "react-router-dom";
 import {
   FiCpu,
@@ -28,18 +28,18 @@ const Navbar = ({ onLogout }) => {
   const [userDropdownOpen, setUserDropdownOpen] = useState(false);
   const { role, user } = useAuth();
 
-  const navItems = [
-    { name: "Dashboard", path: "/dashboard", icon: FiGrid },
-    { name: "Leaderboard", path: "/leaderboard", icon: FiAward },
-    { name: "Clan", path: "/clans", icon: FiUsers },
-    { name: "Archives", path: "/resources", icon: FiFolder },
-  ];
-
-
-
-  if (role === 'clan-chief' || user?.isChief) {
-    navItems.push({ name: 'Clan Chief', path: '/chief-panel', icon: FiShield });
-  }
+  const navItems = useMemo(() => {
+    const items = [
+      { name: "Dashboard", path: "/dashboard", icon: FiGrid },
+      { name: "Leaderboard", path: "/leaderboard", icon: FiAward },
+      { name: "Clan", path: "/clans", icon: FiUsers },
+      { name: "Archives", path: "/resources", icon: FiFolder },
+    ];
+    if (role === 'clan-chief' || user?.isChief) {
+      items.push({ name: 'Clan Chief', path: '/chief-panel', icon: FiShield });
+    }
+    return items;
+  }, [role, user?.isChief]);
 
   const closeMenu = () => setMenuOpen(false);
 
