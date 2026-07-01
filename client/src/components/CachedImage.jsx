@@ -2,6 +2,15 @@ import React, { useState, useEffect } from 'react';
 
 // Global memory cache to track successfully preloaded image sources
 const globalImageCache = new Map();
+const MAX_CACHE_SIZE = 200;
+
+const addToCache = (key, value) => {
+  globalImageCache.set(key, value);
+  if (globalImageCache.size > MAX_CACHE_SIZE) {
+    const oldestKey = globalImageCache.keys().next().value;
+    globalImageCache.delete(oldestKey);
+  }
+};
 
 const CachedImage = ({ src, alt = '', className = '', ...props }) => {
   const [prevSrc, setPrevSrc] = useState(src);
@@ -34,7 +43,7 @@ const CachedImage = ({ src, alt = '', className = '', ...props }) => {
     
     img.src = src;
     img.onload = () => {
-      globalImageCache.set(src, src);
+      addToCache(src, src);
       if (isMounted) {
         setCurrentSrc(src);
       }
