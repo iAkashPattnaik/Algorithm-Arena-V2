@@ -151,7 +151,7 @@ const Dashboard = () => {
   const challengesQ = useQuery({
     queryKey: ["dash-challenges", filters],
     queryFn: async () => {
-      const queryParams = { ...filters, limit: 100 };
+      const queryParams = { ...filters, limit: 20 };
       const r = await api.get(`/api/challenges?${buildQS(queryParams)}`);
       return r.data.data || [];
     },
