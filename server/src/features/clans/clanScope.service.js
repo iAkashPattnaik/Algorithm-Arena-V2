@@ -40,6 +40,7 @@ const findChiefClan = async (userId, session = null) => {
   const clan = await withSession(query, session).lean();
 
   if (!session) {
+    if (chiefClanCache.size > 5000) chiefClanCache.clear();
     chiefClanCache.set(userId, {
       clan,
       expiresAt: Date.now() + CACHE_TTL,
