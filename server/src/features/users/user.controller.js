@@ -9,7 +9,7 @@ const { canActorManageUser } = require('../clans/clanScope.service');
 const getUsers = async (req, res, next) => {
   try {
     const page  = Math.max(1, parseInt(req.query.page,  10) || 1);
-    const limit = Math.min(100, Math.max(1, parseInt(req.query.limit, 10) || 50));
+    const limit = Math.min(10000, Math.max(1, parseInt(req.query.limit, 10) || 1000));
     const skip  = (page - 1) * limit;
 
     const [users, total] = await Promise.all([
@@ -165,6 +165,31 @@ const warnUser = async (req, res, next) => {
   }
 };
 
+// @desc    Clear user warning
+// @route   DELETE /api/users/:id/warn
+// @access  Private/Chief/Admin
+const clearWarningUser = async (req, res, next) => {
+  try {
+    const user = await User.findById(req.params.id);
+    if (!user) return res.status(404).json({ success: false, message: 'User not found' });
+
+    const scopeCheck = await canActorManageUser(req.user, user);
+    if (!scopeCheck.allowed) {
+      return res.status(403).json({ success: false, message: scopeCheck.reason || 'Not authorized' });
+    }
+
+    user.warningMessage = null;
+    if (user.status === 'Warned') {
+      user.status = 'Active';
+    }
+    await user.save();
+
+    return sendSuccess(res, { data: { userId: user._id, status: user.status }, message: 'Warning cleared successfully' });
+  } catch (err) {
+    return next(err);
+  }
+};
+
 // @desc    Ban user
 // @route   PUT /api/users/:id/ban
 // @access  Private/Admin
@@ -281,6 +306,7 @@ module.exports = {
   updateUserRole,
   updateUserLevel,
   warnUser,
+  clearWarningUser,
   banUser,
   unbanUser,
   addAdminByEmail

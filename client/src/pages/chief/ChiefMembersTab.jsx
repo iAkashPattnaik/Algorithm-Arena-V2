@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import toast from 'react-hot-toast';
 import { motion, AnimatePresence } from 'framer-motion';
-import { FiUsers, FiSearch, FiAlertTriangle, FiX, FiAward, FiEdit2 } from 'react-icons/fi';
+import { FiUsers, FiSearch, FiAlertTriangle, FiX, FiAward, FiEdit2, FiTrash2 } from 'react-icons/fi';
 import BaseCard from '../../components/BaseCard';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../../components/ui/select';
 import MemberHoverCard from '../../components/MemberHoverCard';
@@ -48,6 +48,34 @@ const ChiefMembersTab = ({ clan }) => {
     },
     onError: (err) => {
       toast.error(err?.response?.data?.message || 'Failed to send warning');
+    }
+  });
+
+  const removeWarnMutation = useMutation({
+    mutationFn: async (userId) => {
+      const res = await api.delete(`/api/users/${userId}/warn`);
+      return res.data;
+    },
+    onSuccess: () => {
+      toast.success('Warning removed successfully');
+      queryClient.invalidateQueries({ queryKey: ['chief-clan-info'] });
+    },
+    onError: (err) => {
+      toast.error(err?.response?.data?.message || 'Failed to remove warning');
+    }
+  });
+
+  const removeMemberMutation = useMutation({
+    mutationFn: async (userId) => {
+      const res = await api.delete(`/api/clans/${clan._id}/members/${userId}`);
+      return res.data;
+    },
+    onSuccess: () => {
+      toast.success('Member removed from clan');
+      queryClient.invalidateQueries({ queryKey: ['chief-clan-info'] });
+    },
+    onError: (err) => {
+      toast.error(err?.response?.data?.message || 'Failed to remove member');
     }
   });
 
@@ -204,7 +232,20 @@ const ChiefMembersTab = ({ clan }) => {
                       <span className="px-2 py-1 rounded-md bg-white/10 text-tertiary text-[10px] font-black uppercase tracking-widest">Inactive</span>
                     )}
                   </td>
-                  <td className="p-4 text-right pr-6">
+                  <td className="p-4 text-right pr-6 flex items-center justify-end gap-2">
+                    {isWarned && (
+                      <button 
+                        onClick={() => {
+                          if (!canIssueWarning(currentUser, user, clan)) return;
+                          removeWarnMutation.mutate(user._id);
+                        }}
+                        disabled={!canIssueWarning(currentUser, user, clan) || !canManageMembers || removeWarnMutation.isPending}
+                        className="p-2 rounded-lg text-xs font-bold transition-colors inline-flex items-center gap-2 disabled:opacity-50 bg-green-500/10 text-green-500 hover:bg-green-500/20"
+                        title="Remove Warning"
+                      >
+                        <FiX /> Remove Warn
+                      </button>
+                    )}
                     <button 
                       onClick={() => {
                         if (!canIssueWarning(currentUser, user, clan)) return;
@@ -216,6 +257,19 @@ const ChiefMembersTab = ({ clan }) => {
                     >
                       <FiAlertTriangle /> {isWarned ? 'Warn Again' : 'Warn'}
                     </button>
+                    {user._id !== currentUser._id && (
+                      <button 
+                        onClick={() => {
+                          if (!canManageMembers || !window.confirm(`Are you sure you want to remove ${user.username} from the clan?`)) return;
+                          removeMemberMutation.mutate(user._id);
+                        }}
+                        disabled={!canManageMembers || removeMemberMutation.isPending || user.role === 'clan-chief' || user.role === 'admin' || user.role === 'superAdmin'}
+                        className="p-2 rounded-lg text-xs font-bold transition-colors inline-flex items-center gap-2 disabled:opacity-50 bg-white/5 text-secondary hover:text-red-400 hover:bg-red-500/10"
+                        title={user.role === 'clan-chief' || user.role === 'admin' || user.role === 'superAdmin' ? 'Cannot remove this role' : 'Remove Member'}
+                      >
+                        <FiTrash2 /> Remove
+                      </button>
+                    )}
                   </td>
                 </motion.tr>
               );

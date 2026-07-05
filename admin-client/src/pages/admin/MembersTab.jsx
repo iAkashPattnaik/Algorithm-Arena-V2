@@ -53,7 +53,7 @@ const MembersTab = ({ initialClanFilter }) => {
     queryFn: async () => {
       try {
         if (USE_MOCK) return [];
-        const res = await api.get('/api/users');
+        const res = await api.get('/api/users?limit=10000');
         return res.data.data || [];
       } catch (err) {
         console.warn("Failed to fetch users.", err);
@@ -140,6 +140,20 @@ const MembersTab = ({ initialClanFilter }) => {
     }
   });
 
+  const removeWarnMutation = useMutation({
+    mutationFn: async (userId) => {
+      return api.delete(`/api/users/${userId}/warn`);
+    },
+    onSuccess: () => {
+      toast.success("Warning removed successfully");
+      queryClient.invalidateQueries({ queryKey: ['admin-all-users'] });
+      setMenuOpen(null);
+    },
+    onError: (err) => {
+      toast.error(err.response?.data?.message || "Failed to remove warning");
+    }
+  });
+
   const handleRoleChange = async (targetUser, role) => {
     if (!canManageUsers) return;
 
@@ -166,10 +180,12 @@ const MembersTab = ({ initialClanFilter }) => {
                         (u.email && u.email.toLowerCase().includes(s));
     const matchLevel = levelFilter ? u.codingLevel === levelFilter : true;
     let matchClan = true;
+    const activeClan = u.clan ? (clansQuery.data || []).find(c => c._id === u.clan || c._id === u.clan?._id) : null;
+    
     if (clanFilter === 'unassigned') {
-      matchClan = !u.clan;
+      matchClan = !activeClan;
     } else if (clanFilter) {
-      matchClan = u.clan?._id === clanFilter || u.clan === clanFilter;
+      matchClan = activeClan?._id === clanFilter;
     }
     return matchSearch && matchLevel && matchClan;
   });
@@ -358,11 +374,12 @@ const MembersTab = ({ initialClanFilter }) => {
                   </td>
                   <td className="p-4 text-sm text-secondary font-mono">{user.regNo || '---'}</td>
                   <td className="p-4 text-sm">
-                    {user.clan ? (
-                      <span className="text-secondary">{clansQuery.data?.find(c => c._id === user.clan || c._id === user.clan?._id)?.name || 'Unknown'}</span>
-                    ) : (
-                      <span className="text-tertiary italic">Unassigned</span>
-                    )}
+                    {(() => {
+                      if (!user.clan) return <span className="text-tertiary italic">Unassigned</span>;
+                      const activeClan = clansQuery.data?.find(c => c._id === user.clan || c._id === user.clan?._id);
+                      if (activeClan) return <span className="text-secondary">{activeClan.name}</span>;
+                      return <span className="text-tertiary italic">Unassigned</span>;
+                    })()}
                   </td>
                   <td className="p-4">
                     <span className={`px-2 py-1 rounded text-[10px] font-bold border uppercase tracking-widest ${getLevelColor(user.codingLevel)}`}>
@@ -481,6 +498,18 @@ const MembersTab = ({ initialClanFilter }) => {
                         className="w-full text-left px-3 py-2 text-sm text-secondary hover:text-white hover:bg-white/5 rounded flex items-center gap-2 disabled:opacity-50"
                       >
                         <FiUserCheck className="text-green-400" /> Revoke Admin & Make Member
+                      </button>
+                    )}
+                    {menuUser.status === 'Warned' && (
+                      <button
+                        onClick={() => {
+                          if (!canManageUsers) return;
+                          removeWarnMutation.mutate(menuUser._id);
+                        }}
+                        disabled={!canManageUsers || removeWarnMutation.isPending}
+                        className="w-full text-left px-3 py-2 text-sm text-green-400 hover:text-green-300 hover:bg-green-500/10 rounded flex items-center gap-2 disabled:opacity-50"
+                      >
+                        <FiUserCheck /> Remove Warning
                       </button>
                     )}
                     <div className="h-px bg-white/10 my-1 mx-2" />

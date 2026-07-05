@@ -98,7 +98,7 @@ const About = () => {
             <h2 className="text-3xl font-bold text-blue-400 mb-6">Meet the Team</h2>
             
             {/* Team Grid */}
-            <div className="grid grid-cols-2 md:grid-cols-5 gap-4">
+            <div className="flex flex-wrap gap-4">
               {[
                 { name: "Ritesh Kumar", image: "/team/ritesh.jpg", linkedin: "https://www.linkedin.com/in/ritesh-kr08/", roles: [{ name: "Founder", color: "bg-red-500/20 text-red-700 dark:text-red-300 border border-red-500/30" }] },
                 { name: "Nishant Kumar", image: "/team/nishant.jpg", linkedin: "https://www.linkedin.com/in/nishant-kumar-b91a96325/", roles: [{ name: "Frontend", color: "bg-blue-500/20 text-blue-700 dark:text-blue-300 border border-blue-500/30" }] },
@@ -108,10 +108,11 @@ const About = () => {
                 { name: "Ayush Kumar", image: "/team/ayush.jpg", linkedin: "https://www.linkedin.com/in/ayushkumarjsr", roles: [{ name: "Backend", color: "bg-green-500/20 text-green-700 dark:text-green-300 border border-green-500/30" }] },
                 { name: "Omm P.Rout", image: "/team/omm.jpg", linkedin: "https://www.linkedin.com/in/omm-prakash-rout", roles: [{ name: "Backend", color: "bg-green-500/20 text-green-700 dark:text-green-300 border border-green-500/30" }] },
                 { name: "Rishav Singh", image: "/team/rishav.jpg", linkedin: "https://www.linkedin.com/in/rishav-singh13", roles: [{ name: "Backend", color: "bg-green-500/20 text-green-700 dark:text-green-300 border border-green-500/30" }] },
+                { name: "Akash Pattnaik", image: "/team/akash.jpg", linkedin: "https://www.linkedin.com/in/iakashpattnaik/", roles: [{ name: "Backend", color: "bg-green-500/20 text-green-700 dark:text-green-300 border border-green-500/30" }] },
                 { name: "Ashutosh Padhi", image: "/team/ashutosh.png", linkedin: "https://www.linkedin.com/in/ashutosh-padhi", roles: [{ name: "DevOps", color: "bg-yellow-500/20 text-yellow-700 dark:text-yellow-300 border border-yellow-500/30" }] },
                 { name: "Nandish Sinha", image: "/team/nandish.jpg", linkedin: "https://www.linkedin.com/in/nandishsinha", roles: [{ name: "DevOps", color: "bg-yellow-500/20 text-yellow-700 dark:text-yellow-300 border border-yellow-500/30" }] }
               ].map((member) => (
-                <a key={member.name} href={member.linkedin} target="_blank" rel="noopener noreferrer" className="block outline-none">
+                <a key={member.name} href={member.linkedin} target="_blank" rel="noopener noreferrer" className="block outline-none flex-auto min-w-[140px] md:min-w-[160px] max-w-full">
                   <Card className="p-4 flex flex-col items-center text-center border border-black/10 dark:border-white/10 hover:-translate-y-1 hover:border-blue-500/50 transition-all h-full justify-between">
                     <div className="w-14 h-14 rounded-full mb-3 mx-auto overflow-hidden bg-black/5 dark:bg-white/10 flex-shrink-0">
                       <img src={member.image || getAvatar(member.name)} alt={member.name} className="w-full h-full object-cover" style={member.imageStyle || {}} />

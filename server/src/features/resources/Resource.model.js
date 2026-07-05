@@ -4,7 +4,7 @@ const resourceSchema = new mongoose.Schema({
   title: { type: String, required: true },
   folder: { 
     type: String, 
-    enum: ['Arrays', 'Linked Lists', 'DP', 'Graphs', 'Trees', 'Stacks & Queues', 'Strings', 'Sorting'],
+    enum: ['Arrays', 'Linked Lists', 'DP', 'Graphs', 'Trees', 'Stacks & Queues', 'Strings', 'Sorting', 'Solutions'],
     required: true 
   },
   type: { type: String, enum: ['PDF', 'JSON', 'LINK'], required: true },

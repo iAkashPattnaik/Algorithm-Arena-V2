@@ -78,6 +78,7 @@ const ResourcesAdmin = () => {
                   <option value="Graphs">Graphs</option>
                   <option value="Trees">Trees</option>
                   <option value="Arrays">Arrays</option>
+                  <option value="Solutions">Solutions</option>
                 </select>
               </div>
               <div>

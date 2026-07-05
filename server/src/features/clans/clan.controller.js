@@ -690,7 +690,7 @@ const deleteClan = async (req, res, next) => {
 
       await withSession(
         User.updateMany(
-          { _id: { $in: [...new Set([...(clan.members || []), clan.chief].filter(Boolean).map((id) => id.toString()))] } },
+          { clan: clan._id },
           { $unset: { clan: '' } }
         ),
         session
@@ -1065,8 +1065,10 @@ const removeMember = async (req, res, next) => {
 
       const user = await withSession(User.findById(userId), session);
       if (user && user.clan && user.clan.toString() === clan._id.toString()) {
-        user.clan = null;
-        await user.save({ session });
+        await withSession(
+          User.updateOne({ _id: userId }, { $unset: { clan: '' } }),
+          session
+        );
       }
 
       if (wasChief) {

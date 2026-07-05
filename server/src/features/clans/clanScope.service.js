@@ -140,14 +140,18 @@ const reconcileChiefRoleForUser = async (userId, { session = null } = {}) => {
   const chiefClanCount = await withSession(chiefClanCountQuery, session);
 
   if (chiefClanCount === 0 && user.role === 'clan-chief') {
-    user.role = 'user';
-    await user.save({ session });
+    await withSession(
+      User.updateOne({ _id: normalizedId }, { $set: { role: 'user' } }),
+      session
+    );
     return true;
   }
 
   if (chiefClanCount > 0 && user.role === 'user') {
-    user.role = 'clan-chief';
-    await user.save({ session });
+    await withSession(
+      User.updateOne({ _id: normalizedId }, { $set: { role: 'clan-chief' } }),
+      session
+    );
     return true;
   }
 

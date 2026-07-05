@@ -6,7 +6,7 @@ import { FiPlus, FiTrash2, FiFolder, FiFileText, FiLink, FiDownload, FiX, FiUplo
 import BaseCard from '../../components/BaseCard';
 import { api, API_BASE_URL } from '../../lib/api';
 
-const TOPICS = ['Arrays', 'Linked Lists', 'DP', 'Graphs', 'Trees', 'Stacks & Queues', 'Strings', 'Sorting'];
+const TOPICS = ['Arrays', 'Linked Lists', 'DP', 'Graphs', 'Trees', 'Stacks & Queues', 'Strings', 'Sorting', 'Solutions'];
 
 // Uploaded files are stored as a relative backend path; external links are absolute.
 const resolveFileUrl = (url) => (!url || url.startsWith('http') ? url : `${API_BASE_URL}${url}`);
