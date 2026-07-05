@@ -44,6 +44,15 @@ const DiffBar = ({ label, solved, total, color }) => {
 
 import MasteryPieChart from '../components/MasteryPieChart';
 
+const PRESTIGE_ORDER = { LEGENDARY: 3, EPIC: 2, RARE: 1, COMMON: 0 };
+
+const RARITY = {
+  COMMON: { border: "#334155", bg: "#1e293b" },
+  RARE: { border: "#3b82f6", bg: "#1e3a5f" },
+  EPIC: { border: "#a855f7", bg: "#3b1f6e" },
+  LEGENDARY: { border: "#facc15", bg: "#422006" },
+};
+
 const Profile = () => {
   const { user } = useAuth();
   const { username } = useParams();
@@ -81,6 +90,17 @@ const Profile = () => {
     return [...submissions].sort((a, b) => new Date(b.submittedAt) - new Date(a.submittedAt)).slice(0, 10);
   }, [submissions]);
 
+  const profile = profileQ.data || {};
+  const displayUser = username ? profile : user;
+
+  const topBadges = useMemo(() => {
+    const list = profile?.badges || [];
+    return list
+      .filter(b => b.isUnlocked)
+      .sort((a, b) => (PRESTIGE_ORDER[b.rarity] || 0) - (PRESTIGE_ORDER[a.rarity] || 0))
+      .slice(0, 3);
+  }, [profile?.badges]);
+
   if (profileQ.isLoading || subsQ.isLoading) {
     return (
       <div className="flex flex-col lg:flex-row gap-6 p-4 md:p-8">
@@ -95,9 +115,6 @@ const Profile = () => {
       </div>
     );
   }
-
-  const profile = profileQ.data || {};
-  const displayUser = username ? profile : user;
 
   const easy = profile?.difficultyBreakdown?.easy ?? { solved: 0, total: 0 };
   const medium = profile?.difficultyBreakdown?.medium ?? { solved: 0, total: 0 };
@@ -121,7 +138,26 @@ const Profile = () => {
             </div>
           </div>
           <div className="relative z-10">
-            <h1 className="text-3xl md:text-4xl font-black mb-2 bg-gradient-to-b from-primary to-secondary bg-clip-text text-transparent">{displayUser?.username}</h1>
+            <div className="flex items-center gap-3.5 mb-2 flex-wrap">
+              <h1 className="text-3xl md:text-4xl font-black bg-gradient-to-b from-primary to-secondary bg-clip-text text-transparent leading-none">{displayUser?.username}</h1>
+              {topBadges.length > 0 && (
+                <div className="flex items-center gap-1.5  px-2 py-1">
+                  {topBadges.map((badge) => (
+                    <div
+                      key={badge._id}
+                      className="w-7 h-7 rounded-lg flex items-center justify-center text-base border cursor-help shadow-sm transition-transform hover:scale-110"
+                      title={`${badge.name} (${badge.rarity}) — ${badge.description || ""}`}
+                      style={{
+                        background: RARITY[badge.rarity]?.bg || "#1e293b",
+                        borderColor: RARITY[badge.rarity]?.border || "#334155",
+                      }}
+                    >
+                      {badge.icon}
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
             <p className="text-sm text-secondary max-w-md">
               {username ? `Viewing ${displayUser?.username}'s public profile.` : "Track your journey, analyze your performance, and dominate the algorithm arena."}
             </p>

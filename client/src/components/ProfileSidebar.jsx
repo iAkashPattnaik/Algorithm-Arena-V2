@@ -445,9 +445,9 @@ const ProfileSidebar = ({ user, summary, profile, badges }) => {
                       scale: 1,
                       opacity: 1,
                       boxShadow: [
-                        "0 0 10px rgba(250, 204, 21, 0.5)",
-                        "0 0 25px rgba(250, 204, 21, 1)",
-                        "0 0 10px rgba(250, 204, 21, 0.5)"
+                        `0 0 10px rgba(${r.glow})`,
+                        `0 0 25px rgba(${r.glow})`,
+                        `0 0 10px rgba(${r.glow})`
                       ]
                     } : {
                       scale: 1,
@@ -467,7 +467,7 @@ const ProfileSidebar = ({ user, summary, profile, badges }) => {
                     style={{
                       background: r.bg,
                       border: isUnlocked
-                        ? "2px solid #facc15"
+                        ? `2px solid ${r.border}`
                         : `1px solid ${r.border}44`,
                     }}
                   >
@@ -475,7 +475,7 @@ const ProfileSidebar = ({ user, summary, profile, badges }) => {
                     {isUnlocked && (
                       <>
                         {/* Aura Ring Light */}
-                        <div className="absolute inset-0 rounded-xl pointer-events-none" style={{ boxShadow: "inset 0 0 12px #facc15" }} />
+                        <div className="absolute inset-0 rounded-xl pointer-events-none" style={{ boxShadow: `inset 0 0 12px ${r.border}` }} />
 
                         {/* Shining sweeping line */}
                         <motion.div
@@ -491,7 +491,13 @@ const ProfileSidebar = ({ user, summary, profile, badges }) => {
                           }}
                         />
                         {/* Status dot in corner */}
-                        <div className="absolute -top-1 -right-1 w-2 h-2 rounded-full border border-white/30 bg-yellow-400 pointer-events-none" style={{ boxShadow: "0 0 8px #facc15" }} />
+                        <div 
+                          className="absolute -top-1 -right-1 w-2 h-2 rounded-full border border-white/30 pointer-events-none" 
+                          style={{
+                            backgroundColor: r.border,
+                            boxShadow: `0 0 8px ${r.border}`
+                          }}
+                        />
                       </>
                     )}
                   </motion.div>
