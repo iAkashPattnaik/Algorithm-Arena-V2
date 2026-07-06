@@ -288,6 +288,21 @@ const Home = () => {
 
   const challenges = challengesQuery.data || [];
 
+  const publicStatsQuery = useQuery({
+    queryKey: ["public-stats"],
+    queryFn: async () => {
+      const res = await api.get("/api/dashboard/public-stats");
+      return res.data.data;
+    },
+  });
+
+  const stats = publicStatsQuery.data;
+  const challengesCount = stats ? `${stats.totalChallenges}` : "...";
+  const codersCount = stats ? `${stats.totalCoders}` : "...";
+  const submissionsCount = stats
+    ? (stats.totalSubmissions >= 1000 ? `${(stats.totalSubmissions / 1000).toFixed(1)}k` : `${stats.totalSubmissions}`)
+    : "...";
+
   const submissionsQuery = useQuery({
     queryKey: ["my-submissions"],
     queryFn: async () => {
@@ -567,23 +582,23 @@ const Home = () => {
           initial={{ opacity: 0, y: 16 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.6, delay: 0.1 }}
-          className="flex flex-wrap justify-center gap-3 mt-12"
+          className="flex flex-wrap justify-center gap-3 mt-12 hidden"
         >
           <StatPill
             icon={FiZap}
-            value="50+"
+            value={challengesCount}
             label="Challenges"
             color="234, 179, 8"
           />
           <StatPill
             icon={FiUsers}
-            value="200+"
+            value={codersCount}
             label="Coders"
             color="34, 197, 94"
           />
           <StatPill
             icon={FiAward}
-            value="1.5k"
+            value={submissionsCount}
             label="Submissions"
             color="var(--accent-rgb)"
           />
