@@ -32,6 +32,11 @@ const questionSetSchema = new mongoose.Schema({
       langSlug: String,
       code: String
     }],
+    solutions: [{
+      lang: String,
+      langSlug: String,
+      code: String
+    }],
     functionName: { type: String, default: '' },
     testCases: [{
       label: { type: String },

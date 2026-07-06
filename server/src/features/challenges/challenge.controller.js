@@ -153,6 +153,7 @@ const getChallenges = async (req, res, next) => {
           category: q.category || 'Logic',
           tags: q.tags || [],
           codeSnippets: q.codeSnippets || [],
+          solutions: q.solutions || [],
           functionName: q.functionName || '',
           testCases: q.testCases || [],
           questionSetId: questionSet._id,
@@ -348,6 +349,7 @@ const importChallenges = async (req, res, next) => {
       difficulty: ['Easy', 'Medium', 'Hard'].includes(c.difficulty) ? c.difficulty : 'Medium',
       category: stripHtml(c.category) || 'General',
       points: Number(c.points) || 100,
+      solutions: Array.isArray(c.solutions) ? c.solutions : [],
       testCases: c.testCases && Array.isArray(c.testCases) ? c.testCases : [],
     }));
 
@@ -395,4 +397,3 @@ module.exports = {
   importChallenges,
   getLeetCodeDetails,
 };
-

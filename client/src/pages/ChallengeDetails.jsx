@@ -180,6 +180,7 @@ const ChallengeDetails = () => {
   const [language, setLanguage] = useState(
     user?.preferredLanguage || "javascript",
   );
+  const [solutionLanguage, setSolutionLanguage] = useState("javascript");
   const [submitting, setSubmitting] = useState(false);
   const [leftTab, setLeftTab] = useState("description");
 
@@ -668,14 +669,37 @@ const ChallengeDetails = () => {
     }
   };
 
+  const challenge = challengeQuery.data;
+  const solutionEntries = useMemo(
+    () => (challenge?.solutions || []).filter((solution) => solution.code?.trim()),
+    [challenge],
+  );
+
+  useEffect(() => {
+    if (solutionEntries.length === 0) return;
+    if (solutionEntries.some((solution) => solution.langSlug === solutionLanguage)) return;
+
+    const matchingEditorLanguage = solutionEntries.find(
+      (solution) => solution.langSlug === language,
+    );
+    setSolutionLanguage(
+      matchingEditorLanguage?.langSlug || solutionEntries[0].langSlug || "javascript",
+    );
+  }, [language, solutionEntries, solutionLanguage]);
+
+  const selectedSolution = useMemo(
+    () => solutionEntries.find((solution) => solution.langSlug === solutionLanguage),
+    [solutionEntries, solutionLanguage],
+  );
+
   // Sanitize the HTML description
   const sanitizedDescription = useMemo(() => {
-    const raw = challengeQuery.data?.description || "";
+    const raw = challenge?.description || "";
     return DOMPurify.sanitize(raw, {
       ADD_TAGS: ["img"],
       ADD_ATTR: ["target"],
     });
-  }, [challengeQuery.data?.description]);
+  }, [challenge?.description]);
 
   if (challengeQuery.isLoading)
     return (
@@ -697,7 +721,6 @@ const ChallengeDetails = () => {
       </div>
     );
 
-  const challenge = challengeQuery.data;
   const difficultyColor =
     challenge.difficulty === "Easy"
       ? "text-green-400"
@@ -791,7 +814,7 @@ const ChallengeDetails = () => {
         <div
           className={`flex-1 lg:flex-none flex-col min-h-0 macos-glass rounded-xl overflow-hidden w-full lg:w-[var(--left-width)] lg:mb-0 mb-3 h-full panel-slide-left ${isMaximized ? "hidden" : ""} ${mobileTab === 'editor' ? 'hidden lg:flex' : 'flex'}`}
         >
-          <div className="flex border-b border-black/10 dark:border-white/10 shrink-0">
+          <div className="flex border-b border-black/10 dark:border-white/10 shrink-0 overflow-x-auto">
             <button
               className={`px-4 py-3 text-sm font-semibold relative ${leftTab === "description" ? "text-primary" : "text-secondary"}`}
               onClick={() => setLeftTab("description")}
@@ -809,6 +832,16 @@ const ChallengeDetails = () => {
               <FiClock className="inline mr-2" />
               Submissions
               {leftTab === "submissions" && (
+                <span className="absolute bottom-0 left-2 right-2 h-0.5 bg-accent rounded-full" />
+              )}
+            </button>
+            <button
+              className={`px-4 py-3 text-sm font-semibold relative ${leftTab === "solutions" ? "text-primary" : "text-secondary"}`}
+              onClick={() => setLeftTab("solutions")}
+            >
+              <FiCode className="inline mr-2" />
+              Solutions
+              {leftTab === "solutions" && (
                 <span className="absolute bottom-0 left-2 right-2 h-0.5 bg-accent rounded-full" />
               )}
             </button>
@@ -852,6 +885,50 @@ const ChallengeDetails = () => {
                     </span>
                   </Link>
                 ))}
+              </div>
+            ) : leftTab === "solutions" ? (
+              <div className="flex flex-col min-h-[520px] space-y-4">
+                {solutionEntries.length > 0 ? (
+                  <>
+                    <div className="flex items-center justify-between gap-3">
+                      <div>
+                        <p className="text-sm font-bold text-primary">Uploaded Solution</p>
+                        <p className="text-xs text-secondary">
+                          {solutionEntries.length} language{solutionEntries.length === 1 ? "" : "s"} available
+                        </p>
+                      </div>
+                      <div className="w-[150px]">
+                        <Select value={solutionLanguage} onValueChange={setSolutionLanguage}>
+                          <SelectTrigger className="h-8 text-xs bg-black/5 dark:bg-white/5 border-black/10 dark:border-white/10">
+                            <SelectValue />
+                          </SelectTrigger>
+                          <SelectContent>
+                            {solutionEntries.map((solution) => (
+                              <SelectItem key={solution.langSlug} value={solution.langSlug} className="text-xs">
+                                {solution.lang || LANGUAGE_OPTIONS.find((opt) => opt.key === solution.langSlug)?.label || solution.langSlug}
+                              </SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                      </div>
+                    </div>
+                    <div className="flex-1 min-h-[460px] overflow-hidden rounded-xl border border-black/10 dark:border-white/10 bg-black/5 dark:bg-black/40">
+                      <CodeEditor
+                        value={selectedSolution?.code || "// No solution uploaded for this language."}
+                        language={LANGUAGE_MAP[solutionLanguage]?.monacoLang ?? solutionLanguage}
+                        isDark={isDark}
+                        readOnly={true}
+                        height="460px"
+                      />
+                    </div>
+                  </>
+                ) : (
+                  <div className="h-full min-h-[300px] flex flex-col items-center justify-center text-center border border-dashed border-black/10 dark:border-white/10 rounded-xl bg-black/5 dark:bg-white/5 p-6">
+                    <FiCode className="text-tertiary mb-3" size={28} />
+                    <p className="text-sm font-semibold text-primary">No uploaded solutions yet</p>
+                    <p className="text-xs text-secondary mt-1">Solutions added by admins will appear here.</p>
+                  </div>
+                )}
               </div>
             ) : leftTab === "manual" ? (
               <div className="flex flex-col h-full space-y-4">
