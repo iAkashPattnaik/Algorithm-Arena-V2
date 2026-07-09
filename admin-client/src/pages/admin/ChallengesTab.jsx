@@ -11,8 +11,34 @@ import CodeEditor from "../../components/CodeEditor";
 import { LANGUAGE_MAP, LANGUAGE_OPTIONS } from "../../constants/languages";
 import { api } from "../../lib/api";
 import { USE_MOCK, filterSubmissions } from "../../lib/mockData";
+import { isDrivableSignature } from "../../lib/leetcodeDriver";
 
 // ── helpers ───────────────────────────────────────────────────────────────────
+
+/** Render a human-readable signature string so admins can verify fetched types. */
+const SignatureInfo = ({ functionName, params, returnType }) => {
+  const hasParams = Array.isArray(params) && params.length > 0;
+  if (!functionName && !hasParams && !returnType) return null;
+
+  const paramsStr = hasParams
+    ? params.map((p) => `${p.name}: ${p.type}`).join(", ")
+    : "(none)";
+  const javaOk = isDrivableSignature("java", params, returnType);
+  const cppOk = isDrivableSignature("cpp", params, returnType);
+
+  return (
+    <div className="text-[11px] font-mono bg-black/5 dark:bg-white/5 rounded px-2 py-1.5 mt-1 text-secondary">
+      <div>
+        {functionName || "?"}({paramsStr}) → {returnType || "?"}
+      </div>
+      <div className="mt-0.5">
+        Java driver: <span className={javaOk ? "text-green-500" : "text-red-500"}>{javaOk ? "supported" : "not supported"}</span>
+        {"  ·  "}
+        C++ driver: <span className={cppOk ? "text-green-500" : "text-red-500"}>{cppOk ? "supported" : "not supported"}</span>
+      </div>
+    </div>
+  );
+};
 
 const defaultChallengeForm = {
   title: "",
@@ -25,6 +51,8 @@ const defaultChallengeForm = {
   codeSnippets: [],
   solutions: [],
   functionName: "",
+  params: [],
+  returnType: "",
   testCases: [],
 };
 
@@ -101,7 +129,7 @@ const ChallengesTab = () => {
       const res = await api.get(
         `/api/challenges/fetch-leetcode-details?slug=${slug}`,
       );
-      const { title, content, difficulty, topicTags, codeSnippets, functionName, testCases } =
+      const { title, content, difficulty, topicTags, codeSnippets, functionName, params, returnType, testCases } =
         res.data.data;
 
       const tags = (topicTags || []).map((t) => t.name);
@@ -116,6 +144,8 @@ const ChallengesTab = () => {
         tags,
         codeSnippets: codeSnippets || [],
         functionName: functionName || prev.functionName,
+        params: params || prev.params,
+        returnType: returnType || prev.returnType,
         testCases: (testCases || []).map((tc) => ({
           ...tc,
           args: JSON.stringify(tc.args),
@@ -270,6 +300,8 @@ const ChallengesTab = () => {
           category: editingChallenge.category,
           solutions: prepareSolutions(editingChallenge.solutions || []),
           functionName: editingChallenge.functionName || "",
+          params: editingChallenge.params || [],
+          returnType: editingChallenge.returnType || "",
           testCases: prepareTestCases(editingChallenge.testCases || []),
         });
       }
@@ -612,6 +644,11 @@ const ChallengesTab = () => {
                 <p className="text-[11px] text-secondary mt-1">
                   Used to auto-call the function when running JS / Python.
                 </p>
+                <SignatureInfo
+                  functionName={createForm.functionName}
+                  params={createForm.params}
+                  returnType={createForm.returnType}
+                />
               </div>
 
               {/* Test Cases Editor */}
@@ -1181,6 +1218,11 @@ const ChallengesTab = () => {
                 onChange={(e) =>
                   setEditingChallenge((p) => ({ ...p, functionName: e.target.value.trim() }))
                 }
+              />
+              <SignatureInfo
+                functionName={editingChallenge.functionName}
+                params={editingChallenge.params}
+                returnType={editingChallenge.returnType}
               />
             </div>
 
